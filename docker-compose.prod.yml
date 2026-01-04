@@ -1,0 +1,10 @@
+services:
+  backend:
+    build:
+      context: .
+      target: prod
+    ports:
+      - "8000:8000"
+    restart: always
+    environment:
+      NODE_ENV: production
