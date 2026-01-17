@@ -12,6 +12,7 @@ export const warehouses = pgTable(
   "warehouses",
   {
     id: uuid("id").primaryKey().defaultRandom(),
+    name: text("name").notNull(),
 
     address: text("address").notNull(),
 

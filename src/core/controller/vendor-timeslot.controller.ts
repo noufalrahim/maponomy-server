@@ -6,7 +6,7 @@ export class VendorTimeslotsController extends BaseController<
   VendorTimeslotsRecord,
   NewVendorTimeslots
 > {
-  protected model = new VendorTimeslotsService();
+  protected service = new VendorTimeslotsService();
   protected resourceName = "vendor-timeslots";
 
   constructor() {

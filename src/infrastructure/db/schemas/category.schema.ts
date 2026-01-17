@@ -1,6 +1,6 @@
 import { pgTable, uuid, varchar, timestamp } from "drizzle-orm/pg-core";
 
-export const items = pgTable("items", {
+export const categories = pgTable("categories", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: varchar("name").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true })
@@ -13,5 +13,5 @@ export const items = pgTable("items", {
     .$onUpdate(() => new Date()),
 });
 
-export type ItemRecord = typeof items.$inferSelect;
-export type NewItem = typeof items.$inferInsert;
+export type CategoryRecord = typeof categories.$inferSelect;
+export type NewCategory = typeof categories.$inferInsert;

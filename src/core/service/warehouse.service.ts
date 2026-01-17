@@ -1,4 +1,4 @@
-import { BaseService } from "./base/base.service";
+import { BaseFindOptions, BaseService } from "./base/base.service";
 import { WarehouseModel } from "../model/warehouse.model";
 import {
   NewWarehouse,
@@ -10,4 +10,30 @@ export class WarehouseService extends BaseService<
   NewWarehouse
 > {
   protected readonly model = new WarehouseModel();
+
+  protected readonly filterableFields = [
+    "latitude",
+    "longitude",
+    "name",
+    "address",
+  ];
+
+  protected readonly sortableFields = [
+    "name",
+    "createdAt"
+  ];
+
+
+  async findAllWithVendorCount(
+    options?: BaseFindOptions
+  ) {
+    const where = this.compileWhere(options?.query?.where);
+    const orderBy = this.compileOrder(options?.query?.sort);
+    return this.model.findAllWithVendorCount({
+      where,
+      orderBy,
+      limit: options?.query?.limit,
+      offset: options?.query?.offset
+    });
+  }
 }

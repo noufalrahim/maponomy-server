@@ -6,7 +6,7 @@ export class OrderItemsController extends BaseController<
   OrderItemsRecord,
   NewOrderItems
 > {
-  protected model = new OrderItemsService();
+  protected service = new OrderItemsService();
   protected resourceName = "order-items";
 
   constructor() {

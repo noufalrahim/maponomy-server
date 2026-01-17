@@ -5,11 +5,16 @@ import express, {
 } from "express"
 import { IS_PROD } from "./config/env"
 import router from "./core/router"
-
+import cors from "cors"
+import swaggerUi from "swagger-ui-express";
+import { getSwaggerSpec } from "./documentation/swagger";
 export function createApp() {
   const APP_START_TIME = Date.now()
   const app = express()
 
+  // --------------------
+  // Debug logging
+  // --------------------
   if (!IS_PROD) {
     console.log("Debug logging enabled")
   }
@@ -18,6 +23,7 @@ export function createApp() {
   // Middleware
   // --------------------
   app.use(express.json())
+  app.use(cors())
 
   // --------------------
   // Routes
@@ -26,6 +32,10 @@ export function createApp() {
   // app.use("/api/auth", authRouter);
   app.use("/api", router);
   
+  // --------------------
+  // Documentation
+  // --------------------
+  app.use("/docs", swaggerUi.serve, swaggerUi.setup(getSwaggerSpec()));
 
   // --------------------
   // Health & Ops

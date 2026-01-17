@@ -5,9 +5,10 @@ import {
   timestamp,
   numeric,
   index,
+  boolean,
 } from "drizzle-orm/pg-core";
 import { vendors } from "./vendor.schema";
-import { items } from "./item.schema";
+import { categories } from "./category.schema";
 
 export const products = pgTable(
   "products",
@@ -18,12 +19,26 @@ export const products = pgTable(
       .notNull()
       .references(() => vendors.id, { onDelete: "cascade" }),
 
-    itemId: uuid("item_id")
-      .notNull()
-      .references(() => items.id, { onDelete: "cascade" }),
+    name: varchar("name").notNull(),
 
-    quantity: numeric("quantity").notNull(), // supports 0.5 kg etc
+    categoryId: uuid("category_id")
+      .notNull()
+      .references(() => categories.id, { onDelete: "cascade" }),
+
     measureUnit: varchar("measure_unit").notNull(),
+
+    packageType: varchar("package_type").notNull(),
+
+    price: numeric("price").notNull(),
+    
+    quantitySold: numeric("quantity_sold", { mode: "number" })
+      .notNull()
+      .default(0),
+
+    sku: varchar("sku").notNull(),
+
+    active: boolean("active").notNull().default(true),
+    image: varchar("image"),
 
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
@@ -36,11 +51,11 @@ export const products = pgTable(
   },
   (table) => ({
     vendorIdx: index("idx_products_vendor").on(table.vendorId),
-    itemIdx: index("idx_products_item").on(table.itemId),
+    itemIdx: index("idx_products_item").on(table.categoryId),
 
     vendorItemIdx: index("idx_products_vendor_item").on(
       table.vendorId,
-      table.itemId
+      table.categoryId
     ),
   })
 );

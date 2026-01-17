@@ -1,31 +1,108 @@
-import { FieldSelection } from "../../../types";
-import { CrudModel } from "../../controller/base/base.controller";
+import {
+  and,
+  or,
+  eq,
+  ne,
+  gt,
+  gte,
+  lt,
+  lte,
+  inArray,
+  asc,
+  desc,
+  SQL,
+  sql
+} from "drizzle-orm";
 import { BaseModel } from "../../model/base/base.model";
+import { FieldSelection, QueryNode, QuerySpec } from "../../../types";
 
-
-/**
- * BaseService
- * - Adapts BaseModel to CrudModel
- * - NO business logic
- * - NO validation
- * - NO auth
- */
+export interface BaseFindOptions {
+  query?: QuerySpec;
+  fields?: FieldSelection;
+}
 export abstract class BaseService<
   TRecord extends Record<string, any>,
   TInsert extends Record<string, any>
-> implements CrudModel<TRecord, TInsert> {
+> {
   protected abstract readonly model: BaseModel<TRecord, TInsert>;
 
-  async findAll(options?: {
-    fields?: FieldSelection;
-    limit?: number;
-    offset?: number;
-  }): Promise<TRecord[]> {
-    return this.model.find({
-      limit: options?.limit,
-      offset: options?.offset,
+  protected readonly filterableFields: string[] = [];
+  protected readonly sortableFields: string[] = [];
+  protected readonly sortExpressions: Record<string, SQL> = {};
+
+  protected compileWhere(node?: QueryNode): SQL | undefined {
+    if (!node) return undefined;
+
+    if ("and" in node) {
+      return and(...node.and.map(n => this.compileWhere(n)!).filter(Boolean));
+    }
+
+    if ("or" in node) {
+      return or(...node.or.map(n => this.compileWhere(n)!).filter(Boolean));
+    }
+
+    if (!this.filterableFields.includes(node.field)) {
+      throw new Error(`Filtering by '${node.field}' is not allowed`);
+    }
+
+    const column = (this.model as any).table[node.field];
+    if (!column) throw new Error(`Invalid field: ${node.field}`);
+
+    switch (node.op) {
+      case "eq": return eq(column, node.value);
+      case "ne": return ne(column, node.value);
+      case "gt": return gt(column, node.value);
+      case "gte": return gte(column, node.value);
+      case "lt": return lt(column, node.value);
+      case "lte": return lte(column, node.value);
+      case "in":
+        if (!Array.isArray(node.value)) {
+          throw new Error("IN operator requires array");
+        }
+        return inArray(column, node.value);
+      case "like":
+        if (typeof node.value !== "string") {
+          throw new Error("LIKE operator requires string value");
+        }
+        return sql`${column} ILIKE ${'%' + node.value + '%'}`
+      default:
+        throw new Error(`Unsupported operator`);
+    }
+  }
+
+  protected compileOrder(sort?: QuerySpec["sort"]): SQL[] | undefined {
+    if (!sort?.length) return undefined;
+
+    return sort.map(s => {
+      if (this.sortExpressions[s.field]) {
+        return s.direction === "desc"
+          ? desc(this.sortExpressions[s.field])
+          : asc(this.sortExpressions[s.field]);
+      }
+
+      if (!this.sortableFields.includes(s.field)) {
+        throw new Error(`Sorting by '${s.field}' not allowed`);
+      }
+
+      const col = (this.model as any).table[s.field];
+      if (!col) throw new Error(`Invalid sort field`);
+
+      return s.direction === "desc" ? desc(col) : asc(col);
     });
   }
+
+  async find(options: BaseFindOptions): Promise<TRecord[]> {
+    const where = this.compileWhere(options.query?.where);
+    const orderBy = this.compileOrder(options.query?.sort);
+
+    return this.model.find({
+      where,
+      orderBy,
+      limit: options.query?.limit,
+      offset: options.query?.offset
+    });
+  }
+
 
   async findById(
     id: string | number,
@@ -34,7 +111,18 @@ export abstract class BaseService<
     return this.model.findById(id);
   }
 
-  async create(data: TInsert): Promise<TRecord> {
+async count(options?: BaseFindOptions): Promise<number> {
+  const where = this.compileWhere(options?.query?.where);
+  return this.model.count(where);
+}
+
+  async findByIds(
+    ids: Array<string | number>
+  ): Promise<TRecord[]> {
+    return this.model.findByIds(ids);
+  }
+
+  async create(data: TInsert | TInsert[]): Promise<TRecord> {
     return this.model.create(data);
   }
 

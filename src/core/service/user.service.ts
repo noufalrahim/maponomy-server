@@ -24,4 +24,5 @@ export class UserService extends BaseService<UserRecord, NewUser> {
       password: hashedPassword,
     });
   }
+  
 }

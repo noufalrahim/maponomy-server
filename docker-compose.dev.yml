@@ -9,6 +9,22 @@ services:
       - .:/app
       - /app/node_modules
     environment:
-      PORT: 3000
       NODE_ENV: development
-    command: npm run dev
+      PORT: 3000
+    depends_on:
+      - db
+
+  db:
+    image: postgres:15
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: maponomy_user
+      POSTGRES_PASSWORD: maponomy_pass
+      POSTGRES_DB: maponomypoultry_dev
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:

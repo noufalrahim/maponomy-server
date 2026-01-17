@@ -8,7 +8,6 @@ import {
   index,
 } from "drizzle-orm/pg-core";
 import { users } from "./users.schema";
-import { vendors } from "./vendor.schema";
 
 export const salespersons = pgTable(
   "sales_persons",
@@ -20,12 +19,6 @@ export const salespersons = pgTable(
       .unique()
       .references(() => users.id, {
         onDelete: "cascade",
-      }),
-
-    vendorId: uuid("vendor_id")
-      .notNull()
-      .references(() => vendors.id, {
-        onDelete: "restrict",
       }),
 
     name: text("name").notNull(),
@@ -49,7 +42,6 @@ export const salespersons = pgTable(
   },
   table => ({
     userIdx: index("salespersons_user_id_idx").on(table.userId),
-    vendorIdx: index("salespersons_vendor_id_idx").on(table.vendorId),
     activeIdx: index("salespersons_active_idx").on(table.active),
   })
 );

@@ -1,0 +1,1 @@
+ALTER TABLE "vendors" ADD COLUMN "type" text DEFAULT 'external' NOT NULL;

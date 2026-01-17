@@ -1,23 +1,23 @@
 import { Request, Response } from "express";
-import { FieldSelection } from "../../../types";
-import { NotFoundError, ValidationError } from "../../../errors";
-import { asyncHandler } from "../../../middleware/errorHandler";
-
+import { FieldSelection, QuerySpec } from "../../../types";
+import { ValidationError } from "../../../errors";
+import { sendSuccess } from "../../../utils/apiResponse";
+import { asyncHandler } from "../../../middleware/asyncHandler";
 export interface CrudModel<TRecord, TInsert> {
-  findAll(options?: {
+  find(options?: {
+    query?: QuerySpec;
     fields?: FieldSelection;
-    limit?: number;
-    offset?: number;
   }): Promise<TRecord[]>;
 
   findById(id: string | number, fields?: FieldSelection): Promise<TRecord | null>;
+  findByIds(ids: Array<string | number>, fields?: FieldSelection): Promise<TRecord[]>;
   create(data: TInsert): Promise<TRecord>;
   updateById(id: string | number, data: Partial<TInsert>, userId?: string): Promise<TRecord>;
   delete(id: string | number): Promise<void>;
 }
 
 export abstract class BaseController<TRecord, TInsert> {
-  protected abstract model: CrudModel<TRecord, TInsert>;
+  protected abstract service: CrudModel<TRecord, TInsert>;
   protected abstract resourceName: string;
 
   protected selectableFields: string[] = [];
@@ -52,40 +52,87 @@ export abstract class BaseController<TRecord, TInsert> {
     };
   }
 
+  protected parseFilters(req: Request): Record<string, unknown> {
+    const filters: Record<string, unknown> = {};
+
+    for (const [key, value] of Object.entries(req.query)) {
+      if (["fields", "limit", "offset", "sort"].includes(key)) continue;
+      if (value === undefined) continue;
+
+      filters[key] = value;
+    }
+
+    return filters;
+  }
+
+  protected parseSort(req: Request): {
+    field: string;
+    direction: "asc" | "desc";
+  } | undefined {
+    const sort = req.query.sort as string | undefined;
+    if (!sort) return undefined;
+
+    const [field, direction] = sort.split(":");
+
+    console.log(field, direction);
+
+    if (!field) {
+      throw new ValidationError("Invalid sort format");
+    }
+
+    return {
+      field,
+      direction: direction === "desc" ? "desc" : "asc",
+    };
+  }
+
   getAll = asyncHandler(async (req: Request, res: Response) => {
+    const body = req.body as QuerySpec;
+
     const fields = this.parseFieldSelection(req);
-    const limit = req.query.limit ? Number(req.query.limit) : undefined;
-    const offset = req.query.offset ? Number(req.query.offset) : undefined;
 
-    const data = await this.model.findAll({ fields, limit, offset });
+    const data = await this.service.find({
+      query: body,
+      fields
+    });
 
-    // AuditLoggerService.logSearch(req, this.resourceName, fields?.requested, data.length, true);
-
-    res.json(data);
+    return sendSuccess(res, {
+      data,
+      message: `Found ${data.length} ${this.resourceName}`,
+      count: data.length,
+      statusCode: 200,
+    });
   });
 
+
   create = asyncHandler(async (req: Request, res: Response) => {
-    const created = await this.model.create(req.body);
+    const created = await this.service.create(req.body);
 
-    // AuditLoggerService.logCreate(req, this.resourceName, (created as any).id, true);
-
-    res.status(201).json(created);
+    return sendSuccess(res, {
+      data: created,
+      message: `${this.resourceName} created successfully`,
+      statusCode: 201
+    });
   });
 
   update = asyncHandler(async (req: Request, res: Response) => {
     const userId = (req as any).user?.id;
-    const updated = await this.model.updateById(req.params.id, req.body, userId);
+    const updated = await this.service.updateById(req.params.id, req.body, userId);
 
-    // AuditLoggerService.logUpdate(req, this.resourceName, req.params.id, true);
-
-    res.json(updated);
+    return sendSuccess(res, {
+      data: updated,
+      message: `${this.resourceName} updated successfully`,
+      statusCode: 200
+    });
   });
 
-  delete = asyncHandler(async (req: Request, res: Response) => {
-    await this.model.delete(req.params.id);
+  delete = asyncHandler(async (_req: Request, res: Response) => {
+    await this.service.delete(_req.params.id);
 
-    // AuditLoggerService.logDelete(req, this.resourceName, req.params.id, true);
-
-    res.status(204).end();
+    return sendSuccess(res, {
+      data: null,
+      message: `${this.resourceName} deleted successfully`,
+      statusCode: 200
+    });
   });
 }

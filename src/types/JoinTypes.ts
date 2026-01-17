@@ -1,8 +1,8 @@
-import { TableConfig, PgTable } from "drizzle-orm/pg-core";
-import { SQL } from "drizzle-orm";
+import type { AnyPgTable } from "drizzle-orm/pg-core";
+import type { SQL } from "drizzle-orm";
 
-export type JoinType = {
-  table: PgTable<TableConfig>;
-  on: (base: any, join: any) => SQL | any;
-  fromTable?: PgTable<TableConfig>;
-};
+export interface JoinType {
+  table: AnyPgTable;
+  fromTable?: AnyPgTable;
+  on: (base: AnyPgTable, join: AnyPgTable) => SQL;
+}

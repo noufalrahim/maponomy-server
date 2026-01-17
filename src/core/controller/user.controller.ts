@@ -3,7 +3,7 @@ import { UserService } from "../service/user.service";
 import { BaseController } from "./base/base.controller";
 
 export class UserController extends BaseController<UserRecord, NewUser> {
-  protected model = new UserService();
+  protected service = new UserService();
   protected resourceName = "user";
 
   constructor() {
