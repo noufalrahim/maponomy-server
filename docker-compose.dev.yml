@@ -1,30 +1,68 @@
+# services:
+#   maponomy-poultry-backend:
+#     container_name: maponomy-poultry-backend
+#     user: 1001:1000
+#     build:
+#       context: .
+#       target: dev
+#     ports:
+#       - "9200:3000"
+#     # volumes:
+#       # - .:/app
+#       # - /app/node_modules
+#     environment:
+#       NODE_ENV: development
+#       PORT: 3000
+#     depends_on:
+#       - maponomy-poultry-db
+
+#   maponomy-poultry-db:
+#     image: postgres:15
+#     container_name: maponomy-poultry-db
+#     user: 1001:1000
+#     restart: always
+#     ports:
+#       - "9201:5432"
+#     environment:
+#       POSTGRES_USER: maponomy_user
+#       POSTGRES_PASSWORD: maponomy_pass
+#       POSTGRES_DB: maponomypoultry_dev
+#     volumes:
+#       - postgres_data:/var/lib/postgresql/data
+
+# volumes:
+#   postgres_data:
+
 services:
-  backend:
+  mahek-backend:
+    container_name: mahek-backend
+    user: 1001:1000
     build:
       context: .
       target: dev
     ports:
-      - "3000:3000"
+      - "9200:3000"
     volumes:
-      - .:/app
-      - /app/node_modules
-    environment:
-      NODE_ENV: development
-      PORT: 3000
+      - ./.npm:/.npm
+    #   - .:/app
+    #   - /app/node_modules
+    env_file:
+      - ./.env.development
     depends_on:
-      - db
+      - mahek-db
 
-  db:
+  mahek-db:
     image: postgres:15
+    container_name: mahek-db
+    # user: 1001:1000
     restart: always
     ports:
-      - "5432:5432"
+      - "9201:5432"
     environment:
       POSTGRES_USER: maponomy_user
       POSTGRES_PASSWORD: maponomy_pass
       POSTGRES_DB: maponomypoultry_dev
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - ./postgres_data:/var/lib/postgresql/data
 
-volumes:
-  postgres_data:
+

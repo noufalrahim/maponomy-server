@@ -1,6 +1,6 @@
 node_modules/
 .env
-.env.development
+# .env.development
 .env.production
 scripts/
 server.config
