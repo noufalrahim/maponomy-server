@@ -15,10 +15,6 @@ export const products = pgTable(
   {
     id: uuid("id").primaryKey().defaultRandom(),
 
-    vendorId: uuid("vendor_id")
-      .notNull()
-      .references(() => vendors.id, { onDelete: "cascade" }),
-
     name: varchar("name").notNull(),
 
     categoryId: uuid("category_id")
@@ -50,11 +46,9 @@ export const products = pgTable(
       .$onUpdate(() => new Date()),
   },
   (table) => ({
-    vendorIdx: index("idx_products_vendor").on(table.vendorId),
     itemIdx: index("idx_products_item").on(table.categoryId),
 
     vendorItemIdx: index("idx_products_vendor_item").on(
-      table.vendorId,
       table.categoryId
     ),
   })

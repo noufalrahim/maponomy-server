@@ -24,6 +24,6 @@ const adminCrudRouter = createBaseRouter(
 );
 
 router.use("/", adminCrudRouter);
-router.use("/customer/:customerId", controller.getByCustomerId);
+// router.use("/customer/:customerId", controller.getByCustomerId);
 
 export default router;

@@ -1,9 +1,10 @@
+import { s3 } from "../../config/s3-client";
 import { asyncHandler } from "../../middleware/asyncHandler";
 import importHandlers from "../../uploads/importHandlers";
 import { sendError, sendSuccess } from "../../utils/apiResponse";
 import { Request, Response } from "express";
 import fs from "fs";
-
+import { PutObjectCommand } from "@aws-sdk/client-s3";
 
 export class UploadController {
   uploadFile = asyncHandler(async (req: Request, res: Response) => {
@@ -61,4 +62,40 @@ export class UploadController {
       });
     }
   });
+
+  uploadImage = asyncHandler(async (req: Request, res: Response) => {
+    if (!req.file) {
+      return sendError(res, {
+        message: "No file uploaded",
+        errorMessage: "No file uploaded",
+        statusCode: 400
+      });
+    }
+
+    console.log(req.file?.mimetype, req.file?.size);
+
+
+    const ext = req.file.originalname.split(".").pop();
+    const key = `images/${crypto.randomUUID()}.${ext}`;
+
+    await s3.send(
+      new PutObjectCommand({
+        Bucket: process.env.S3_BUCKET!,
+        Key: key,
+        Body: req.file.buffer,
+        ContentType: req.file.mimetype,
+        ContentDisposition: "inline"
+      })
+    );
+
+    return sendSuccess(res, {
+      data: {
+        key,
+        url: `${process.env.STORAGE_ENDPOINT}/${process.env.S3_BUCKET}/${key}`
+      },
+      message: "Image uploaded successfully",
+      statusCode: 200
+    });
+  });
+
 }

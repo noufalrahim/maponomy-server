@@ -176,6 +176,13 @@
       "when": 1768468901222,
       "tag": "0024_cuddly_jean_grey",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1768738050464,
+      "tag": "0025_burly_night_nurse",
+      "breakpoints": true
     }
   ]
 }

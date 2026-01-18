@@ -13,7 +13,7 @@ export class ProductModel extends BaseModel<
   protected readonly table = products;
 
 
-  async findAllWithCategoryAndVendor(options: {
+  async findAllWithCategory(options: {
     where?: SQL;
     orderBy?: SQL | SQL[];
     limit?: number;
@@ -36,14 +36,14 @@ export class ProductModel extends BaseModel<
           id: categories.id,
           name: categories.name
         },
-        vendor: {
-          id: vendors.id,
-          name: vendors.name
-        }
+        // vendor: {
+        //   id: vendors.id,
+        //   name: vendors.name
+        // }
       })
       .from(products)
       .leftJoin(categories, eq(products.categoryId, categories.id))
-      .leftJoin(vendors, eq(products.vendorId, vendors.id));
+      // .leftJoin(vendors, eq(products.vendorId, vendors.id));
 
     if (options.where) {
       (query as any) = query.where(options.where);
@@ -75,44 +75,44 @@ export class ProductModel extends BaseModel<
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
       categoryId: row.category ?? null,
-      vendorId: row.vendor ?? null
+      // vendorId: row.vendor ?? null
     }));
   }
 
-  async findByCustomerId(customerId: string): Promise<ProductResponseDTO[]> {
-    let query = db
-      .select({
-        id: products.id,
-        name: products.name,
-        sku: products.sku,
-        image: products.image,
-        measureUnit: products.measureUnit,
-        packageType: products.packageType,
-        price: products.price,
-        createdAt: products.createdAt,
-        updatedAt: products.updatedAt,
-        category: {
-          id: categories.id,
-          name: categories.name
-        },
-      })
-      .from(products)
-      .leftJoin(categories, eq(products.categoryId, categories.id))
-      .where(and(eq(products.vendorId, customerId), eq(products.active, true)));
+  // async findByCustomerId(customerId: string): Promise<ProductResponseDTO[]> {
+  //   let query = db
+  //     .select({
+  //       id: products.id,
+  //       name: products.name,
+  //       sku: products.sku,
+  //       image: products.image,
+  //       measureUnit: products.measureUnit,
+  //       packageType: products.packageType,
+  //       price: products.price,
+  //       createdAt: products.createdAt,
+  //       updatedAt: products.updatedAt,
+  //       category: {
+  //         id: categories.id,
+  //         name: categories.name
+  //       },
+  //     })
+  //     .from(products)
+  //     .leftJoin(categories, eq(products.categoryId, categories.id))
+  //     .where(and(eq(products.vendorId, customerId), eq(products.active, true)));
 
-    const rows = await query;
+  //   const rows = await query;
 
-    return rows.map(row => ({
-      id: row.id,
-      name: row.name,
-      sku: row.sku,
-      image: row.image,
-      measureUnit: row.measureUnit,
-      packageType: row.packageType,
-      price: row.price,
-      createdAt: row.createdAt,
-      updatedAt: row.updatedAt,
-      categoryId: row.category ?? null,
-    }));
-  }
+  //   return rows.map(row => ({
+  //     id: row.id,
+  //     name: row.name,
+  //     sku: row.sku,
+  //     image: row.image,
+  //     measureUnit: row.measureUnit,
+  //     packageType: row.packageType,
+  //     price: row.price,
+  //     createdAt: row.createdAt,
+  //     updatedAt: row.updatedAt,
+  //     categoryId: row.category ?? null,
+  //   }));
+  // }
 }

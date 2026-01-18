@@ -33,7 +33,7 @@ export class ProductService extends BaseService<
     const where = this.compileWhere(options?.query?.where);
     const orderBy = this.compileOrder(options?.query?.sort);
 
-    return this.model.findAllWithCategoryAndVendor({
+    return this.model.findAllWithCategory({
       where,
       orderBy,
       limit: options?.query?.limit,
@@ -41,7 +41,7 @@ export class ProductService extends BaseService<
     });
   }
 
-  async findByCustomerId(customerId: string): Promise<ProductResponseDTO[]> {
-    return this.model.findByCustomerId(customerId);
-  }
+  // async findByCustomerId(customerId: string): Promise<ProductResponseDTO[]> {
+  //   return this.model.findByCustomerId(customerId);
+  // }
 }

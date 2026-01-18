@@ -42,13 +42,13 @@ export class ProductController extends BaseController<
     });
   });
 
-  getByCustomerId = asyncHandler(async (req: Request, res: Response) => {
-    const customerId = req.params.customerId;
-    const productsData = await this.service.findByCustomerId(customerId);
-    return sendSuccess(res, {
-      data: productsData,
-      message: `${this.resourceName} fetched successfully`,
-      statusCode: 200,
-    });
-  });
+  // getByCustomerId = asyncHandler(async (req: Request, res: Response) => {
+  //   const customerId = req.params.customerId;
+  //   const productsData = await this.service.findByCustomerId(customerId);
+  //   return sendSuccess(res, {
+  //     data: productsData,
+  //     message: `${this.resourceName} fetched successfully`,
+  //     statusCode: 200,
+  //   });
+  // });
 }

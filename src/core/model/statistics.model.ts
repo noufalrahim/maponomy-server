@@ -375,10 +375,13 @@ export class StatisticsModel extends BaseModel<
           productId: products.id,
           name: products.name,
           quantitySold: products.quantitySold,
+          image: products.image,
         })
         .from(products)
-        .where(eq(products.vendorId, customerId))
-        .orderBy(sql`${products.quantitySold} DESC`),
+        // .where(eq(products.vendorId, customerId))
+        .where(sql`${products.quantitySold} > 0`)
+        .orderBy(sql`${products.quantitySold} DESC`)
+        .limit(5),
     ]);
 
     return {

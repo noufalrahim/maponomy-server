@@ -12,7 +12,7 @@ export default async function exportProducts(res: Response) {
 
   const rows = await db
     .select({
-      vendorId: products.vendorId,
+      // vendorId: products.vendorId,
       categoryName: categories.name,
       name: products.name,
       measureUnit: products.measureUnit,
@@ -28,7 +28,8 @@ export default async function exportProducts(res: Response) {
 
   for (const r of rows) {
     res.write(
-      `${r.vendorId},${r.categoryName},${r.name},${r.measureUnit},${r.packageType},${r.price},${r.quantitySold},${r.sku},${r.active},${r.image ?? ""}\n`
+      // `${r.vendorId},${r.categoryName},${r.name},${r.measureUnit},${r.packageType},${r.price},${r.quantitySold},${r.sku},${r.active},${r.image ?? ""}\n`
+      `${r.categoryName},${r.name},${r.measureUnit},${r.packageType},${r.price},${r.quantitySold},${r.sku},${r.active},${r.image ?? ""}\n`
     );
   }
 

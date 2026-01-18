@@ -112,7 +112,7 @@ export default async function importProducts(
         }
 
         await tx.insert(products).values({
-          vendorId,
+          // vendorId,
           categoryId,
           name,
           measureUnit,

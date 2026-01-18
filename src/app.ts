@@ -23,7 +23,14 @@ export function createApp() {
   // Middleware
   // --------------------
   app.use(express.json())
-  app.use(cors())
+  app.use(
+    cors({
+      origin: "http://localhost:9221",
+      credentials: true,
+      methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+      allowedHeaders: ["Content-Type", "Authorization"],
+    })
+  )
 
   // --------------------
   // Routes
@@ -31,7 +38,7 @@ export function createApp() {
 
   // app.use("/api/auth", authRouter);
   app.use("/api", router);
-  
+
   // --------------------
   // Documentation
   // --------------------
