@@ -25,7 +25,7 @@ export function createApp() {
   app.use(express.json())
   app.use(
     cors({
-      origin: "http://localhost:9221",
+      origin: "http://178.236.185.239:9221",
       credentials: true,
       methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
       allowedHeaders: ["Content-Type", "Authorization"],

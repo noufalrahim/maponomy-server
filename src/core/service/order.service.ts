@@ -62,19 +62,27 @@ export class OrderService extends BaseService<
     return this.model.updateOrder(id, data);
   }
 
-  async findDailyLimitByCustomerId(customerId: string): Promise<{
-    totalTodaysOrder: number;
-    limitExceeded: boolean;
-  }> {
-    const CustomerService = new VendorService();
-    const customer = await CustomerService.findById(customerId);
-
-    if (!customer) {
-      throw new Error("Customer not found");
-    }
-
-    return this.model.findDailyLimitByCustomerId(customer.userId);
+async findDailyLimitByCustomerId(customerId: string): Promise<{
+  totalTodaysOrder: number
+  limitExceeded: boolean
+}> {
+  if (!customerId) {
+    throw new Error("customerId is required")
   }
+
+  const customerService = new VendorService()
+  const customer = await customerService.findById(customerId)
+
+  if (!customer || !customer.userId || !customer.id) {
+    throw new Error("Customer not found")
+  }
+
+  return this.model.findDailyLimitByCustomerId(
+    customer.userId,
+    customer.id
+  )
+}
+
 
   async bulkCreateOrders(data: CreateOrderRequestDTO[]): Promise<OrderRecord[]> {
     return this.model.bulkCreateOrders(data);

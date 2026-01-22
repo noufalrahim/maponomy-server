@@ -3,7 +3,7 @@ import { OrderRecord, orders } from "../../infrastructure/db/schemas/order.schem
 import { vendors } from "../../infrastructure/db/schemas/vendor.schema";
 import { warehouses } from "../../infrastructure/db/schemas/warehouse.schema";
 import { salespersons } from "../../infrastructure/db/schemas/salesperson.schema";
-import { and, desc, eq, SQL, sql } from "drizzle-orm";
+import { and, desc, eq, or, SQL, sql } from "drizzle-orm";
 import { BaseModel } from "./base/base.model";
 import { OrderStatus } from "../../types";
 import { orderItems, products, vendorSalespersons } from "../../infrastructure/db/schema";
@@ -499,38 +499,50 @@ export class OrderModel extends BaseModel<
       return updatedOrder;
     });
   }
+async findDailyLimitByCustomerId(
+  userId: string,
+  customerId: string
+): Promise<{
+  totalTodaysOrder: number
+  limitExceeded: boolean
+}> {
+  const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000
 
+  const nowUtc = new Date()
+  const nowIst = new Date(nowUtc.getTime() + IST_OFFSET_MS)
 
-  async findDailyLimitByCustomerId(userId: string): Promise<{
-    totalTodaysOrder: number;
-    limitExceeded: boolean;
-  }> {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+  const istTodayStart = new Date(nowIst)
+  istTodayStart.setHours(0, 0, 0, 0)
 
-    const tomorrow = new Date(today);
-    tomorrow.setDate(today.getDate() + 1);
+  const istTomorrowStart = new Date(istTodayStart)
+  istTomorrowStart.setDate(istTodayStart.getDate() + 1)
 
-    const result = await db
-      .select({
-        count: sql<number>`COUNT(*)`,
-      })
-      .from(orders)
-      .where(
-        and(
+  const utcWindowStart = new Date(istTodayStart.getTime() - IST_OFFSET_MS)
+  const utcWindowEnd = new Date(istTomorrowStart.getTime() - IST_OFFSET_MS)
+
+  const result = await db
+    .select({
+      count: sql<number>`COUNT(*)`,
+    })
+    .from(orders)
+    .where(
+      and(
+        sql`${orders.createdAt} >= ${utcWindowStart}`,
+        sql`${orders.createdAt} < ${utcWindowEnd}`,
+        or(
           eq(orders.createdBy, userId),
-          sql`${orders.createdAt} >= ${today.toISOString()}`,
-          sql`${orders.createdAt} < ${tomorrow.toISOString()}`
+          eq(orders.vendorId, customerId)
         )
-      );
+      )
+    )
 
-    const totalTodaysOrder = Number(result[0]?.count ?? 0);
+  const totalTodaysOrder = Number(result[0]?.count ?? 0)
 
-    return {
-      totalTodaysOrder,
-      limitExceeded: totalTodaysOrder >= 1,
-    };
+  return {
+    totalTodaysOrder,
+    limitExceeded: totalTodaysOrder > 0,
   }
+}
 
   async findAllOrdersByCustomerUnderSalesperson(salespersonId: string): Promise<OrderResponseDTO[]> {
     const rows = await db
