@@ -1,0 +1,9 @@
+node_modules/
+.env
+.env.development
+.env.production
+scripts/
+server.config
+postgres_data
+persistent-data
+server.config

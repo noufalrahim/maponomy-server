@@ -1,0 +1,6 @@
+{
+    "watch": ["src"],
+    "ext": "ts",
+    "ignore": ["dist/*"],
+    "exec": "NODE_ENV=development ts-node src/index.ts"
+}

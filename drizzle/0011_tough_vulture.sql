@@ -1,0 +1,1 @@
+ALTER TABLE "warehouses" ALTER COLUMN "name" SET DEFAULT 'Warehouse';
