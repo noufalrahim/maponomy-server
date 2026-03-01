@@ -1,5 +1,6 @@
 import { Response } from "express";
-import { and, eq, gte, lte } from "drizzle-orm";
+import { and, eq, gte, lte, sql } from "drizzle-orm";
+import { aliasedTable } from "drizzle-orm";
 import { db } from "../../config/database";
 import {
   orders,
@@ -7,6 +8,8 @@ import {
   vendors,
   warehouses,
 } from "../../infrastructure/db/schema";
+
+const vendorWarehouses = aliasedTable(warehouses, "vendor_warehouses");
 
 function csvEscape(value: unknown): string {
   if (value === null || value === undefined) return "";
@@ -62,16 +65,17 @@ export default async function exportOrders(
       customerPhoneNumber: vendors.phoneNumber,
       customerType: vendors.type,
 
-      warehouseId: warehouses.id,
-      warehouseName: warehouses.name,
-      warehouseAddress: warehouses.address,
-      warehouseLatitude: warehouses.latitude,
-      warehouseLongitude: warehouses.longitude,
+      warehouseId: sql<string>`COALESCE(${warehouses.id}, ${vendorWarehouses.id})`,
+      warehouseName: sql<string>`COALESCE(${warehouses.name}, ${vendorWarehouses.name})`,
+      warehouseAddress: sql<string>`COALESCE(${warehouses.address}, ${vendorWarehouses.address})`,
+      warehouseLatitude: sql<number>`COALESCE(${warehouses.latitude}, ${vendorWarehouses.latitude})`,
+      warehouseLongitude: sql<number>`COALESCE(${warehouses.longitude}, ${vendorWarehouses.longitude})`,
     })
     .from(orders)
     .innerJoin(vendors, eq(orders.vendorId, vendors.id))
     .innerJoin(users, eq(orders.createdBy, users.id))
     .leftJoin(warehouses, eq(orders.warehouseId, warehouses.id))
+    .leftJoin(vendorWarehouses, eq(vendorWarehouses.id, vendors.warehouseId))
     .where(and(gte(orders.createdAt, from), lte(orders.createdAt, to)));
 
   for (const r of rows) {

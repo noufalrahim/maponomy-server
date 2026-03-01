@@ -3,7 +3,7 @@ import { OrderRecord, orders } from "../../infrastructure/db/schemas/order.schem
 import { vendors } from "../../infrastructure/db/schemas/vendor.schema";
 import { warehouses } from "../../infrastructure/db/schemas/warehouse.schema";
 import { salespersons } from "../../infrastructure/db/schemas/salesperson.schema";
-import { and, desc, eq, or, SQL, sql } from "drizzle-orm";
+import { and, desc, eq, or, SQL, sql, aliasedTable } from "drizzle-orm";
 import { BaseModel } from "./base/base.model";
 import { OrderStatus } from "../../types";
 import { orderItems, products, vendorSalespersons } from "../../infrastructure/db/schema";
@@ -11,6 +11,8 @@ import { OrderItemsModel } from "./order-items.model";
 import { CreateOrderRequestDTO, UpdateOrderRequestDTO } from "../dto/RequestDTO/OrderRequestDTO";
 import { OrderResponseDTO, OrdersBySalespersonResponseDTO } from "../dto/ResponseDTO/OrderResponseDTO";
 import { BaseFindOptions } from "../service/base/base.service";
+
+const vendorWarehouses = aliasedTable(warehouses, "vendor_warehouses");
 
 export class OrderModel extends BaseModel<
   typeof orders.$inferSelect,
@@ -177,8 +179,8 @@ export class OrderModel extends BaseModel<
         },
 
         warehouse: {
-          id: warehouses.id,
-          name: warehouses.name,
+          id: sql<string>`COALESCE(${warehouses.id}, ${vendorWarehouses.id})`,
+          name: sql<string>`COALESCE(${warehouses.name}, ${vendorWarehouses.name})`,
         },
 
         salesperson: {
@@ -216,6 +218,7 @@ export class OrderModel extends BaseModel<
       .from(orders)
       .leftJoin(vendors, eq(vendors.id, orders.vendorId))
       .leftJoin(warehouses, eq(warehouses.id, orders.warehouseId))
+      .leftJoin(vendorWarehouses, eq(vendorWarehouses.id, vendors.warehouseId))
       .leftJoin(salespersons, eq(salespersons.userId, orders.createdBy))
       .leftJoin(orderItems, eq(orderItems.orderId, orders.id))
       .leftJoin(products, eq(products.id, orderItems.productId))
@@ -223,6 +226,8 @@ export class OrderModel extends BaseModel<
         orders.id,
         vendors.id,
         warehouses.id,
+        vendorWarehouses.id,
+        vendorWarehouses.name,
         salespersons.id
       );
 
@@ -306,8 +311,8 @@ export class OrderModel extends BaseModel<
         },
 
         warehouse: {
-          id: warehouses.id,
-          name: warehouses.name,
+          id: sql<string>`COALESCE(${warehouses.id}, ${vendorWarehouses.id})`,
+          name: sql<string>`COALESCE(${warehouses.name}, ${vendorWarehouses.name})`,
         },
 
         salesperson: {
@@ -341,6 +346,7 @@ export class OrderModel extends BaseModel<
       .from(orders)
       .leftJoin(vendors, eq(vendors.id, orders.vendorId))
       .leftJoin(warehouses, eq(warehouses.id, orders.warehouseId))
+      .leftJoin(vendorWarehouses, eq(vendorWarehouses.id, vendors.warehouseId))
       .leftJoin(salespersons, eq(salespersons.userId, orders.createdBy))
       .leftJoin(orderItems, eq(orderItems.orderId, orders.id))
       .leftJoin(products, eq(products.id, orderItems.productId))
@@ -349,6 +355,8 @@ export class OrderModel extends BaseModel<
         orders.id,
         vendors.id,
         warehouses.id,
+        vendorWarehouses.id,
+        vendorWarehouses.name,
         salespersons.id
       )
       .orderBy(desc(orders.createdAt));
@@ -580,8 +588,8 @@ export class OrderModel extends BaseModel<
         },
 
         warehouse: {
-          id: warehouses.id,
-          name: warehouses.name,
+          id: sql<string>`COALESCE(${warehouses.id}, ${vendorWarehouses.id})`,
+          name: sql<string>`COALESCE(${warehouses.name}, ${vendorWarehouses.name})`,
         },
 
         salesperson: {
@@ -626,6 +634,10 @@ export class OrderModel extends BaseModel<
         eq(warehouses.id, orders.warehouseId)
       )
       .leftJoin(
+        vendorWarehouses,
+        eq(vendorWarehouses.id, vendors.warehouseId)
+      )
+      .leftJoin(
         salespersons,
         eq(salespersons.userId, orders.createdBy)
       )
@@ -642,6 +654,8 @@ export class OrderModel extends BaseModel<
         orders.id,
         vendors.id,
         warehouses.id,
+        vendorWarehouses.id,
+        vendorWarehouses.name,
         salespersons.id
       )
       .orderBy(desc(orders.createdAt));

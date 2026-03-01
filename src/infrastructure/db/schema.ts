@@ -8,3 +8,4 @@ export * from './schemas/order.schema';
 export * from './schemas/product.schema';
 export * from './schemas/vendor-timeslot.schema';
 export * from './schemas/vendor-salesperson.schema';
+export * from './schemas/product-price-history.schema';

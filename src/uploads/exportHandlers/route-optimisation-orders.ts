@@ -32,11 +32,13 @@ export default async function exportRouteOptimisationOrders(
   );
 
   res.write(
-    "wbn,item_name,sku,destination_name,address,service_time_mins,package_weight_kg,lat,lon,opening_hour,closing_hour,date,type,contact,secondary_contact,dimension_unit,dimension_length,dimension_width,dimension_height,quantity (measuring unit)\n"
+    "id,warehouse_id,wbn,item_name,sku,destination_name,address,service_time_mins,package_weight_kg,lat,lon,opening_hour,closing_hour,date,type,contact,secondary_contact,dimension_unit,dimension_length,dimension_width,dimension_height,quantity\n"
   );
 
   const rows = await db
     .select({
+      orderId: orders.id,
+      warehouseId: vendors.warehouseId,
       itemName: products.name,
       sku: products.sku,
 
@@ -66,6 +68,8 @@ export default async function exportRouteOptimisationOrders(
   for (const r of rows) {
     res.write(
       [
+        csvEscape(r.orderId),
+        csvEscape(r.warehouseId),
         "",
         csvEscape(r.itemName),
         csvEscape(r.sku),

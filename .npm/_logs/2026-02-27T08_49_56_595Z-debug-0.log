@@ -1,0 +1,104 @@
+0 verbose cli /usr/local/bin/node /usr/local/lib/node_modules/npm/bin/npm-cli.js
+1 info using npm@10.8.2
+2 info using node@v20.20.0
+3 silly config load:file:/usr/local/lib/node_modules/npm/npmrc
+4 silly config load:file:/app/.npmrc
+5 silly config load:file:/.npmrc
+6 silly config load:file:/usr/local/etc/npmrc
+7 verbose title npm exec nodemon
+8 verbose argv "exec" "--" "nodemon"
+9 verbose logfile logs-max:10 dir:/.npm/_logs/2026-02-27T08_49_56_595Z-
+10 verbose logfile /.npm/_logs/2026-02-27T08_49_56_595Z-debug-0.log
+11 silly logfile start cleaning logs, removing 1 files
+12 silly logfile done cleaning log files
+13 silly packumentCache heap:2197815296 maxSize:549453824 maxEntrySize:274726912
+14 http fetch GET 200 https://registry.npmjs.org/nodemon 382ms (cache updated)
+15 silly packumentCache heap:2197815296 maxSize:549453824 maxEntrySize:274726912
+16 silly packumentCache heap:2197815296 maxSize:549453824 maxEntrySize:274726912
+17 warn exec The following package was not found and will be installed: nodemon@3.1.14
+18 silly idealTree buildDeps
+19 silly fetch manifest nodemon@3.1.14
+20 silly packumentCache full:https://registry.npmjs.org/nodemon cache-miss
+21 http fetch GET 200 https://registry.npmjs.org/nodemon 89ms (cache updated)
+22 silly packumentCache full:https://registry.npmjs.org/nodemon set size:undefined disposed:false
+23 silly placeDep ROOT nodemon@3.1.14 REPLACE for:  want: 3.1.14
+24 silly fetch manifest minimatch@^10.2.1
+25 silly packumentCache full:https://registry.npmjs.org/minimatch cache-miss
+26 http fetch GET 200 https://registry.npmjs.org/minimatch 75ms (cache updated)
+27 silly packumentCache full:https://registry.npmjs.org/minimatch set size:undefined disposed:false
+28 silly placeDep ROOT minimatch@10.2.4 OK for: nodemon@3.1.14 want: ^10.2.1
+29 silly fetch manifest brace-expansion@^5.0.2
+30 silly packumentCache full:https://registry.npmjs.org/brace-expansion cache-miss
+31 http fetch GET 200 https://registry.npmjs.org/brace-expansion 62ms (cache updated)
+32 silly packumentCache full:https://registry.npmjs.org/brace-expansion set size:undefined disposed:false
+33 silly placeDep ROOT brace-expansion@5.0.3 OK for: minimatch@10.2.4 want: ^5.0.2
+34 silly fetch manifest balanced-match@^4.0.2
+35 silly packumentCache full:https://registry.npmjs.org/balanced-match cache-miss
+36 http fetch GET 200 https://registry.npmjs.org/balanced-match 91ms (cache updated)
+37 silly packumentCache full:https://registry.npmjs.org/balanced-match set size:undefined disposed:false
+38 silly placeDep ROOT balanced-match@4.0.4 OK for: brace-expansion@5.0.3 want: ^4.0.2
+39 silly reify mark retired [ '/.npm/_npx/c08057651e53e122/node_modules/balanced-match' ]
+40 silly reify mark retired [ '/.npm/_npx/c08057651e53e122/node_modules/brace-expansion' ]
+41 silly reify mark retired [ '/.npm/_npx/c08057651e53e122/node_modules/concat-map' ]
+42 silly reify mark retired [ '/.npm/_npx/c08057651e53e122/node_modules/minimatch' ]
+43 silly reify mark retired [
+43 silly reify   '/.npm/_npx/c08057651e53e122/node_modules/nodemon',
+43 silly reify   '/.npm/_npx/c08057651e53e122/node_modules/.bin/nodemon'
+43 silly reify ]
+44 silly reify moves {
+44 silly reify   '/.npm/_npx/c08057651e53e122/node_modules/balanced-match': '/.npm/_npx/c08057651e53e122/node_modules/.balanced-match-Fh9hXonW',
+44 silly reify   '/.npm/_npx/c08057651e53e122/node_modules/brace-expansion': '/.npm/_npx/c08057651e53e122/node_modules/.brace-expansion-PMbsZVEu',
+44 silly reify   '/.npm/_npx/c08057651e53e122/node_modules/concat-map': '/.npm/_npx/c08057651e53e122/node_modules/.concat-map-92t1epum',
+44 silly reify   '/.npm/_npx/c08057651e53e122/node_modules/minimatch': '/.npm/_npx/c08057651e53e122/node_modules/.minimatch-OurnQzB6',
+44 silly reify   '/.npm/_npx/c08057651e53e122/node_modules/nodemon': '/.npm/_npx/c08057651e53e122/node_modules/.nodemon-ZXR4e22D',
+44 silly reify   '/.npm/_npx/c08057651e53e122/node_modules/.bin/nodemon': '/.npm/_npx/c08057651e53e122/node_modules/.bin/.nodemon-1bd4KzRE'
+44 silly reify }
+45 silly audit bulk request {
+45 silly audit   anymatch: [ '3.1.3' ],
+45 silly audit   'binary-extensions': [ '2.3.0' ],
+45 silly audit   braces: [ '3.0.3' ],
+45 silly audit   chokidar: [ '3.6.0' ],
+45 silly audit   debug: [ '4.4.3' ],
+45 silly audit   'fill-range': [ '7.1.1' ],
+45 silly audit   fsevents: [ '2.3.3' ],
+45 silly audit   'glob-parent': [ '5.1.2' ],
+45 silly audit   'has-flag': [ '3.0.0' ],
+45 silly audit   'ignore-by-default': [ '1.0.1' ],
+45 silly audit   'is-binary-path': [ '2.1.0' ],
+45 silly audit   'is-extglob': [ '2.1.1' ],
+45 silly audit   'is-glob': [ '4.0.3' ],
+45 silly audit   'is-number': [ '7.0.0' ],
+45 silly audit   ms: [ '2.1.3' ],
+45 silly audit   'normalize-path': [ '3.0.0' ],
+45 silly audit   picomatch: [ '2.3.1' ],
+45 silly audit   'pstree.remy': [ '1.1.8' ],
+45 silly audit   readdirp: [ '3.6.0' ],
+45 silly audit   semver: [ '7.7.3' ],
+45 silly audit   'simple-update-notifier': [ '2.0.0' ],
+45 silly audit   'supports-color': [ '5.5.0' ],
+45 silly audit   'to-regex-range': [ '5.0.1' ],
+45 silly audit   touch: [ '3.1.1' ],
+45 silly audit   undefsafe: [ '2.0.5' ],
+45 silly audit   nodemon: [ '3.1.14' ],
+45 silly audit   minimatch: [ '10.2.4' ],
+45 silly audit   'brace-expansion': [ '5.0.3' ],
+45 silly audit   'balanced-match': [ '4.0.4' ]
+45 silly audit }
+46 verbose reify failed optional dependency /.npm/_npx/c08057651e53e122/node_modules/fsevents
+47 silly reify mark deleted [ '/.npm/_npx/c08057651e53e122/node_modules/fsevents' ]
+48 silly tarball no local data for nodemon@https://registry.npmjs.org/nodemon/-/nodemon-3.1.14.tgz. Extracting by manifest.
+49 silly tarball no local data for brace-expansion@https://registry.npmjs.org/brace-expansion/-/brace-expansion-5.0.3.tgz. Extracting by manifest.
+50 silly tarball no local data for minimatch@https://registry.npmjs.org/minimatch/-/minimatch-10.2.4.tgz. Extracting by manifest.
+51 silly tarball no local data for balanced-match@https://registry.npmjs.org/balanced-match/-/balanced-match-4.0.4.tgz. Extracting by manifest.
+52 http fetch GET 200 https://registry.npmjs.org/balanced-match/-/balanced-match-4.0.4.tgz 257ms (cache miss)
+53 http fetch GET 200 https://registry.npmjs.org/brace-expansion/-/brace-expansion-5.0.3.tgz 269ms (cache miss)
+54 http fetch POST 200 https://registry.npmjs.org/-/npm/v1/security/advisories/bulk 280ms
+55 silly audit report {}
+56 http fetch GET 200 https://registry.npmjs.org/nodemon/-/nodemon-3.1.14.tgz 290ms (cache miss)
+57 http fetch GET 200 https://registry.npmjs.org/minimatch/-/minimatch-10.2.4.tgz 291ms (cache miss)
+58 verbose cwd /app
+59 verbose os Linux 6.10.14-linuxkit
+60 verbose node v20.20.0
+61 verbose npm  v10.8.2
+62 verbose exit 143
+63 verbose code 143

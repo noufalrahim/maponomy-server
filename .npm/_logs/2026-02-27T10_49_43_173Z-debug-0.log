@@ -7,16 +7,16 @@
 6 silly config load:file:/usr/local/etc/npmrc
 7 verbose title npm exec nodemon
 8 verbose argv "exec" "--" "nodemon"
-9 verbose logfile logs-max:10 dir:/.npm/_logs/2026-02-02T16_49_20_340Z-
-10 verbose logfile /.npm/_logs/2026-02-02T16_49_20_340Z-debug-0.log
+9 verbose logfile logs-max:10 dir:/.npm/_logs/2026-02-27T10_49_43_173Z-
+10 verbose logfile /.npm/_logs/2026-02-27T10_49_43_173Z-debug-0.log
 11 silly logfile start cleaning logs, removing 1 files
 12 silly logfile done cleaning log files
-13 silly packumentCache heap:4345298944 maxSize:1086324736 maxEntrySize:543162368
-14 http fetch GET 200 https://registry.npmjs.org/nodemon 403ms (cache revalidated)
-15 silly packumentCache heap:4345298944 maxSize:1086324736 maxEntrySize:543162368
-16 silly packumentCache heap:4345298944 maxSize:1086324736 maxEntrySize:543162368
+13 silly packumentCache heap:2197815296 maxSize:549453824 maxEntrySize:274726912
+14 http fetch GET 200 https://registry.npmjs.org/nodemon 473ms (cache revalidated)
+15 silly packumentCache heap:2197815296 maxSize:549453824 maxEntrySize:274726912
+16 silly packumentCache heap:2197815296 maxSize:549453824 maxEntrySize:274726912
 17 verbose cwd /app
-18 verbose os Linux 6.8.0-88-generic
+18 verbose os Linux 6.10.14-linuxkit
 19 verbose node v20.20.0
 20 verbose npm  v10.8.2
 21 verbose exit 143
