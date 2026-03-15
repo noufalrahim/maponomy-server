@@ -20,19 +20,20 @@ export class WarehouseController extends BaseController<
   }
 
   override getAll = asyncHandler(async (req: Request, res: Response) => {
-
     const body = req.body as QuerySpec;
-
     const fields = this.parseFieldSelection(req);
+    const isAdmin = this.getIsAdmin(req);
 
     const warehouses = await this.service.findAllWithVendorCount({
       query: body,
-      fields
+      fields,
+      isAdmin
     });
 
     const count = await this.service.count({
       query: body,
       fields,
+      isAdmin
     });
 
     return sendSuccess(res, {

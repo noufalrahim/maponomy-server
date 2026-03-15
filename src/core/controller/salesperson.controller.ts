@@ -33,13 +33,16 @@ export class SalesPersonController extends BaseController<
     const body = req.body as QuerySpec;
 
     const fields = this.parseFieldSelection(req);
+    const isAdmin = this.getIsAdmin(req);
     const salespersons = await this.service.findAllSalespersonsWithProgress({
       query: body,
-      fields
+      fields,
+      isAdmin
     });
     const count = await this.service.count({
       query: body,
-      fields
+      fields,
+      isAdmin
     });
     return sendSuccess(res, {
       data: salespersons,

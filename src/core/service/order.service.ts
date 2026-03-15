@@ -37,7 +37,7 @@ export class OrderService extends BaseService<
   }
 
   async findAllOrders(options?: BaseFindOptions): Promise<OrderResponseDTO[]> {
-    const where = this.compileWhere(options?.query?.where);
+    const where = this.applyActiveFilter(this.compileWhere(options?.query?.where), options?.isAdmin);
     const orderBy = this.compileOrder(options?.query?.sort);
     return this.model.findAllOrders({
       where,
@@ -64,7 +64,7 @@ export class OrderService extends BaseService<
   }
 
   async countAllOrders(options?: BaseFindOptions): Promise<number> {
-    const where = this.compileWhere(options?.query?.where);
+    const where = this.applyActiveFilter(this.compileWhere(options?.query?.where), options?.isAdmin);
     return this.model.countAllOrders(where);
   }
 

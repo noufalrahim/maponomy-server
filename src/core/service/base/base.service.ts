@@ -20,6 +20,7 @@ import { QUERY_FIELD_MAP } from "../../../utils/query-field-mapper";
 export interface BaseFindOptions {
   query?: QuerySpec;
   fields?: FieldSelection;
+  isAdmin?: boolean;
 }
 export abstract class BaseService<
   TRecord extends Record<string, any>,
@@ -35,6 +36,14 @@ export abstract class BaseService<
       return new Date(value);
     }
     return value;
+  }
+
+  protected applyActiveFilter(where: SQL | undefined, isAdmin?: boolean): SQL | undefined {
+    if (isAdmin === false && (this.model as any).table.active) {
+      const activeFilter = eq((this.model as any).table.active, true);
+      return where ? and(where, activeFilter) : activeFilter;
+    }
+    return where;
   }
   protected compileWhere(node?: QueryNode): SQL | undefined {
     if (!node) return undefined;
@@ -129,7 +138,7 @@ export abstract class BaseService<
   }
 
   async find(options: BaseFindOptions): Promise<TRecord[]> {
-    const where = this.compileWhere(options.query?.where);
+    const where = this.applyActiveFilter(this.compileWhere(options.query?.where), options.isAdmin);
     const orderBy = this.compileOrder(options.query?.sort);
 
     return this.model.find({
@@ -149,7 +158,7 @@ export abstract class BaseService<
   }
 
   async count(options?: BaseFindOptions): Promise<number> {
-    const where = this.compileWhere(options?.query?.where);
+    const where = this.applyActiveFilter(this.compileWhere(options?.query?.where), options?.isAdmin);
     return this.model.count(where);
   }
 

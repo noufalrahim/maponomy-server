@@ -102,9 +102,8 @@ export function getResetTokenExpiry(): Date {
 
 export function getAccessToken(req: Request): string | undefined {
     const token = req.headers.authorization;
-    console.log("Token: ", token);
     if (!token || !token.startsWith("Bearer ")) {
-        throw new Error("Unauthorized");
+        return undefined;
     }
     return token.split(" ")[1]
 }

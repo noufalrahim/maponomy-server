@@ -3,14 +3,17 @@ import { FieldSelection, QuerySpec } from "../../../types";
 import { ValidationError } from "../../../errors";
 import { sendSuccess } from "../../../utils/apiResponse";
 import { asyncHandler } from "../../../middleware/asyncHandler";
+import { getAccessToken, verifyToken } from "../../../utils/jwt";
 export interface CrudModel<TRecord, TInsert> {
   find(options?: {
     query?: QuerySpec;
     fields?: FieldSelection;
+    isAdmin?: boolean;
   }): Promise<TRecord[]>;
 
   findById(id: string | number, fields?: FieldSelection): Promise<TRecord | null>;
   findByIds(ids: Array<string | number>, fields?: FieldSelection): Promise<TRecord[]>;
+  count(options?: { query?: QuerySpec; fields?: FieldSelection; isAdmin?: boolean }): Promise<number>;
   create(data: TInsert): Promise<TRecord>;
   updateById(id: string | number, data: Partial<TInsert>, userId?: string): Promise<TRecord>;
   delete(id: string | number): Promise<void>;
@@ -23,6 +26,17 @@ export abstract class BaseController<TRecord, TInsert> {
   protected selectableFields: string[] = [];
   protected defaultFields: string[] = [];
   protected excludedFields: string[] = ["password", "passwordHash", "password_hash"];
+
+  protected getIsAdmin(req: Request): boolean {
+    try {
+      const token = getAccessToken(req);
+      if (!token) return false;
+      const payload = verifyToken(token);
+      return payload.type === "admin";
+    } catch {
+      return false;
+    }
+  }
 
   protected parseFieldSelection(req: Request): FieldSelection | undefined {
     const fieldsQuery = req.query.fields as string | undefined;
@@ -90,16 +104,18 @@ export abstract class BaseController<TRecord, TInsert> {
     const body = req.body as QuerySpec;
 
     const fields = this.parseFieldSelection(req);
+    const isAdmin = this.getIsAdmin(req);
 
     const data = await this.service.find({
       query: body,
-      fields
+      fields,
+      isAdmin
     });
 
     return sendSuccess(res, {
       data,
       message: `Found ${data.length} ${this.resourceName}`,
-      count: data.length,
+      count: await this.service.count({ query: body, fields, isAdmin }),
       statusCode: 200,
     });
   });

@@ -27,7 +27,7 @@ export class WarehouseService extends BaseService<
   async findAllWithVendorCount(
     options?: BaseFindOptions
   ) {
-    const where = this.compileWhere(options?.query?.where);
+    const where = this.applyActiveFilter(this.compileWhere(options?.query?.where), options?.isAdmin);
     const orderBy = this.compileOrder(options?.query?.sort);
     return this.model.findAllWithVendorCount({
       where,

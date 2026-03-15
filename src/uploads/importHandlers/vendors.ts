@@ -29,7 +29,8 @@ interface VendorCsvRow {
 const normalize = (v?: string) => v?.trim().toLowerCase() || null;
 
 export default async function importVendors(
-  buffer: Buffer
+  buffer: Buffer,
+  userId: string
 ): Promise<ImportResult & { existing: number }> {
   const rows: VendorCsvRow[] = [];
 
@@ -131,7 +132,7 @@ export default async function importVendors(
               active:
                 r.active !== undefined
                   ? r.active.trim().toLowerCase() === "true" ||
-                    r.active.trim().toLowerCase() === "active"
+                  r.active.trim().toLowerCase() === "active"
                   : true,
             })
             .returning({ id: vendors.id });

@@ -62,7 +62,7 @@ export default async function exportOrders(
       customerLatitude: vendors.latitude,
       customerLongitude: vendors.longitude,
       customerAddress: vendors.address,
-      customerPhoneNumber: vendors.phoneNumber,
+    customerPhoneNumber: vendors.phoneNumber,
       customerType: vendors.type,
 
       warehouseId: sql<string>`COALESCE(${warehouses.id}, ${vendorWarehouses.id})`,

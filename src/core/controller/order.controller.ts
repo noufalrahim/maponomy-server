@@ -32,15 +32,18 @@ export class OrderController extends BaseController<
     const body = req.body as QuerySpec;
     
     const fields = this.parseFieldSelection(req);
+    const isAdmin = this.getIsAdmin(req);
 
     const orders = await this.service.findAllOrders({
       query: body,
-      fields
+      fields,
+      isAdmin
     });
     
     const count = await this.service.countAllOrders({
       query: body,
-      fields
+      fields,
+      isAdmin
     });
     
     return sendSuccess(res, {

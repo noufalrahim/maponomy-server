@@ -6,11 +6,17 @@ import { s3 } from "../../config/s3-client";
 import { asyncHandler } from "../../middleware/asyncHandler";
 import importHandlers from "../../uploads/importHandlers";
 import { sendError, sendSuccess } from "../../utils/apiResponse";
+import { getAccessToken, verifyToken } from "../../utils/jwt";
 
 export class UploadController {
   uploadFile = asyncHandler(async (req: Request, res: Response) => {
     const file = req.file;
     const type = req.body.type as string | undefined;
+
+    const token = getAccessToken(req);
+    if (!token) throw new Error("No token provided");
+    const payload = verifyToken(token);
+    const userId = payload.id;
 
     console.log("File:", file);
     console.log("Type:", type);
@@ -42,7 +48,7 @@ export class UploadController {
     }
 
     try {
-      const result = await handler(file.buffer);
+      const result = await handler(file.buffer, userId);
 
       return sendSuccess(res, {
         data: result,

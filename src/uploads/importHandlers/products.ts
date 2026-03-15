@@ -19,7 +19,8 @@ interface ProductCsvRow {
 }
 
 export default async function importProducts(
-  buffer: Buffer
+  buffer: Buffer,
+  userId: string
 ): Promise<ImportResult & { existing: number }> {
   const rows: ProductCsvRow[] = [];
 

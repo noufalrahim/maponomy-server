@@ -32,7 +32,7 @@ export class ProductService extends BaseService<
   };
 
   async findAllProducts(options?: BaseFindOptions): Promise<ProductResponseDTO[]> {
-    const where = this.compileWhere(options?.query?.where);
+    const where = this.applyActiveFilter(this.compileWhere(options?.query?.where), options?.isAdmin);
     const orderBy = this.compileOrder(options?.query?.sort);
 
     return this.model.findAllWithCategory({

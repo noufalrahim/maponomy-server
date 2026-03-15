@@ -3,14 +3,13 @@ import bcrypt from "bcryptjs";
 import { eq } from "drizzle-orm";
 import { Readable } from "stream";
 
-import { ImportResult } from "../../types";
+import { ImportResult, Role } from "../../types";
 import { db } from "../../config/database";
 import { salespersons, users } from "../../infrastructure/db/schema";
 
 interface SalespersonCsvRow {
   email?: string;
   password?: string;
-  role?: string;
   name?: string;
   phone_number?: string;
   monthly_target?: string;
@@ -18,7 +17,8 @@ interface SalespersonCsvRow {
 }
 
 export default async function importSalespersons(
-  buffer: Buffer
+  buffer: Buffer,
+  userId: string
 ): Promise<ImportResult & { existing: number }> {
   const rows: SalespersonCsvRow[] = [];
 
@@ -85,7 +85,7 @@ export default async function importSalespersons(
           .values({
             email,
             password: hashedPassword,
-            role: r.role ?? "user",
+            role: Role.SALES_PERSON,
             isActive: true
           })
           .returning({ id: users.id });

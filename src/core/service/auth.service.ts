@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, or } from "drizzle-orm";
 import { NewUser, SalesPersonRecord, salespersons, UserRecord, users, vendors } from "../../infrastructure/db/schema";
 import { generateTokens, verifyToken } from "../../utils/jwt";
 import { AuthDTO, AuthLoginDTO, LoginResponseDTO } from "../dto";
@@ -99,18 +99,22 @@ async validateToken(
     const userRec = await db
       .select()
       .from(users)
-      .where(eq(users.email, user.email))
+      .where(
+        and(
+          eq(users.email, user.email),
+          or(
+            eq(users.role, Role.SALES_PERSON),
+            eq(users.role, Role.CUSTOMER)
+          )
+        )
+      )
       .limit(1)
 
     if (userRec.length === 0) {
       throw new Error("User not found")
     }
 
-    const role = userRec[0].role
-
-    if (role !== Role.SALES_PERSON && role !== Role.CUSTOMER) {
-      throw new Error("INVALID_PERMISSION")
-    }
+    const role = userRec[0].role as Role
 
     let result: any[]
 
@@ -222,7 +226,7 @@ async validateToken(
     console.log("User: ", user);
 
     const result = await this.model.find({
-      where: eq(users.email, user.email),
+      where: and(eq(users.email, user.email), eq(users.role, Role.ADMIN)),
       limit: 1,
     });
 

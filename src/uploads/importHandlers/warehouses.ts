@@ -15,7 +15,8 @@ interface WarehouseCsvRow {
 }
 
 export default async function importWarehouses(
-  buffer: Buffer
+  buffer: Buffer,
+  userId: string
 ): Promise<ImportResult & { existing: number }> {
   const rows: WarehouseCsvRow[] = [];
 

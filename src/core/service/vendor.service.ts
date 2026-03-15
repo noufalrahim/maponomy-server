@@ -89,7 +89,7 @@ export class VendorService extends BaseService<
   }
 
   async findAllVendors(options?: BaseFindOptions): Promise<VendorResponseDTO[]> {
-    const where = this.compileWhere(options?.query?.where);
+    const where = this.applyActiveFilter(this.compileWhere(options?.query?.where), options?.isAdmin);
     const orderBy = this.compileOrder(options?.query?.sort);
     return this.model.findAllVendors({
       where,
