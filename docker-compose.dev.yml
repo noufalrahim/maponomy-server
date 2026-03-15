@@ -10,7 +10,9 @@ services:
     ports:
       - "9200:3000"
     volumes:
+      - .:/app
       - ./.npm:/.npm
+      - /app/node_modules
     env_file:
       - ./.env.development
     depends_on:

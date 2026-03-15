@@ -6,6 +6,7 @@ import {
   vendors,
   products,
   orderItems,
+  warehouses,
 } from "../../infrastructure/db/schema";
 
 function csvEscape(value: unknown): string {
@@ -32,13 +33,14 @@ export default async function exportRouteOptimisationOrders(
   );
 
   res.write(
-    "id,warehouse_id,wbn,item_name,sku,destination_name,address,service_time_mins,package_weight_kg,lat,lon,opening_hour,closing_hour,date,type,contact,secondary_contact,dimension_unit,dimension_length,dimension_width,dimension_height,quantity\n"
+    "id,warehouse_id,warehouse_name,wbn,item_name,sku,destination_name,address,service_time_mins,package_weight_kg,lat,lon,opening_hour,closing_hour,date,type,contact,secondary_contact,dimension_unit,dimension_length,dimension_width,dimension_height,quantity\n"
   );
 
   const rows = await db
     .select({
       orderId: orders.id,
       warehouseId: vendors.warehouseId,
+      warehouseName: warehouses.name,
       itemName: products.name,
       sku: products.sku,
 
@@ -57,19 +59,21 @@ export default async function exportRouteOptimisationOrders(
       date: orders.deliveryDate,
 
       contact: vendors.phoneNumber,
-      quantity: products.measureUnit
+      quantity: orderItems.quantity
     })
     .from(orders)
     .innerJoin(vendors, eq(orders.vendorId, vendors.id))
-    .innerJoin(orderItems, eq(orderItems.orderId, orders.id))
-    .innerJoin(products, eq(orderItems.productId, products.id))
-    .where(and(gte(orders.createdAt, from), lte(orders.createdAt, to)));
+    .leftJoin(warehouses, eq(vendors.warehouseId, warehouses.id))
+    .leftJoin(orderItems, eq(orderItems.orderId, orders.id))
+    .leftJoin(products, eq(orderItems.productId, products.id))
+    .where(and(gte(orders.deliveryDate, fromDate), lte(orders.deliveryDate, toDate)));
 
   for (const r of rows) {
     res.write(
       [
         csvEscape(r.orderId),
         csvEscape(r.warehouseId),
+        csvEscape(r.warehouseName),
         "",
         csvEscape(r.itemName),
         csvEscape(r.sku),

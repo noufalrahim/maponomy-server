@@ -7,3 +7,4 @@ server.config
 postgres_data
 persistent-data
 server.config
+.npm
