@@ -3,7 +3,7 @@ import { OrderRecord, orders } from "../../infrastructure/db/schemas/order.schem
 import { vendors } from "../../infrastructure/db/schemas/vendor.schema";
 import { warehouses } from "../../infrastructure/db/schemas/warehouse.schema";
 import { salespersons } from "../../infrastructure/db/schemas/salesperson.schema";
-import { and, desc, eq, or, SQL, sql, aliasedTable } from "drizzle-orm";
+import { and, desc, eq, or, SQL, sql, aliasedTable, inArray } from "drizzle-orm";
 import { BaseModel } from "./base/base.model";
 import { OrderStatus } from "../../types";
 import { orderItems, products, vendorSalespersons } from "../../infrastructure/db/schema";
@@ -56,14 +56,22 @@ export class OrderModel extends BaseModel<
         throw new Error("Failed to create order");
       }
 
-      const orderItems = data.orderItems.map(item => ({
+      const productRecords = await tx
+        .select({ id: products.id, serviceTime: products.serviceTime })
+        .from(products)
+        .where(inArray(products.id, data.orderItems.map(i => i.productId)));
+      
+      const productTimeMap = new Map(productRecords.map(p => [p.id, p.serviceTime]));
+
+      const orderItemsToCreate = data.orderItems.map(item => ({
         orderId: orderRecord.id,
         productId: item.productId,
         quantity: item.quantity,
         totalPrice: (item.quantity * item.unitPrice).toFixed(2),
+        serviceTime: item.serviceTime ?? productTimeMap.get(item.productId) ?? 0,
       }));
 
-      await orderItemsModel.create(orderItems);
+      await orderItemsModel.create(orderItemsToCreate);
 
       const productQtyPayload = data.orderItems.map(i => ({
         id: i.productId,
@@ -128,11 +136,18 @@ export class OrderModel extends BaseModel<
 
         createdOrders.push(orderRecord);
 
+        const productRecords = await tx
+          .select({ id: products.id, serviceTime: products.serviceTime })
+          .from(products)
+          .where(inArray(products.id, order.orderItems.map(i => i.productId)));
+        const productTimeMap = new Map(productRecords.map(p => [p.id, p.serviceTime]));
+
         const items = order.orderItems.map(item => ({
           orderId: orderRecord.id,
           productId: item.productId,
           quantity: item.quantity,
           totalPrice: (item.quantity * item.unitPrice).toFixed(2),
+          serviceTime: item.serviceTime ?? productTimeMap.get(item.productId) ?? 0,
         }));
 
         await orderItemsModel.create(items);
@@ -336,7 +351,8 @@ export class OrderModel extends BaseModel<
               'productName', ${products.name},
               'productPrice', ${products.price},
               'quantity', ${orderItems.quantity},
-              'totalPrice', ${products.price} * ${orderItems.quantity}
+              'totalPrice', ${products.price} * ${orderItems.quantity},
+              'serviceTime', ${orderItems.serviceTime}
             )
           ) FILTER (WHERE ${orderItems.id} IS NOT NULL),
           '[]'
@@ -463,39 +479,47 @@ export class OrderModel extends BaseModel<
 
       const deltaPayload: { id: string; qty: number }[] = [];
 
-      for (const item of data.orderItems) {
-        if (existingMap.has(item.productId)) {
-          const oldQty = existingMap.get(item.productId)!;
-          const diff = item.quantity - oldQty;
-          if (diff !== 0) {
-            deltaPayload.push({ id: item.productId, qty: diff });
+          const dataItems = data.orderItems ?? [];
+          const productRecords = await tx
+            .select({ id: products.id, serviceTime: products.serviceTime })
+            .from(products)
+            .where(inArray(products.id, dataItems.map(i => i.productId)));
+          const productTimeMap = new Map(productRecords.map(p => [p.id, p.serviceTime]));
+
+          for (const item of dataItems) {
+            if (existingMap.has(item.productId)) {
+              const oldQty = existingMap.get(item.productId)!;
+              const diff = item.quantity - oldQty;
+              if (diff !== 0) {
+                deltaPayload.push({ id: item.productId, qty: diff });
+              }
+              await tx
+                .update(orderItems)
+                .set({
+                  quantity: item.quantity,
+                  totalPrice: (item.quantity * item.unitPrice).toFixed(2),
+                  serviceTime: item.serviceTime ?? productTimeMap.get(item.productId) ?? 0,
+                })
+                .where(
+                  and(
+                    eq(orderItems.orderId, id),
+                    eq(orderItems.productId, item.productId)
+                  )
+                );
+            } else {
+              deltaPayload.push({ id: item.productId, qty: item.quantity });
+
+              await orderItemsModel.create([
+                {
+                  orderId: id,
+                  productId: item.productId,
+                  quantity: item.quantity,
+                  totalPrice: (item.quantity * item.unitPrice).toFixed(2),
+                  serviceTime: item.serviceTime ?? productTimeMap.get(item.productId) ?? 0,
+                },
+              ]);
+            }
           }
-
-          await tx
-            .update(orderItems)
-            .set({
-              quantity: item.quantity,
-              totalPrice: (item.quantity * item.unitPrice).toFixed(2),
-            })
-            .where(
-              and(
-                eq(orderItems.orderId, id),
-                eq(orderItems.productId, item.productId)
-              )
-            );
-        } else {
-          deltaPayload.push({ id: item.productId, qty: item.quantity });
-
-          await orderItemsModel.create([
-            {
-              orderId: id,
-              productId: item.productId,
-              quantity: item.quantity,
-              totalPrice: (item.quantity * item.unitPrice).toFixed(2),
-            },
-          ]);
-        }
-      }
 
       for (const [productId, oldQty] of existingMap) {
         if (!incomingMap.has(productId)) {

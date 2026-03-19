@@ -19,6 +19,7 @@ export const createOrderRequestSchema = z.object({
         productId: z.string().min(1),
         quantity: z.number(),
         unitPrice: z.number(),
+        serviceTime: z.number().optional(),
     })),
 }).strict();
 
@@ -41,6 +42,7 @@ export const updateOrderRequestSchema = z.object({
         productId: z.string().min(1),
         quantity: z.number(),
         unitPrice: z.number(),
+        serviceTime: z.number().optional(),
     })).optional(),
 }).strict();
 

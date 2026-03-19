@@ -114,16 +114,23 @@ export default async function importOrders(
         Array.from(groups.values()).flatMap(g => g.items.map(i => i.productId))
     ));
 
-    const productPrices = new Map<string, number>();
+    const productData = new Map<string, { price: number, serviceTime: number }>();
 
     if (uniqueProductIds.length > 0) {
         const dbProducts = await db
-            .select({ id: products.id, price: products.price })
+            .select({ 
+                id: products.id, 
+                price: products.price,
+                serviceTime: products.serviceTime 
+            })
             .from(products)
             .where(inArray(products.id, uniqueProductIds));
 
         for (const p of dbProducts) {
-            productPrices.set(p.id, parseFloat(p.price));
+            productData.set(p.id, { 
+                price: parseFloat(p.price), 
+                serviceTime: p.serviceTime 
+            });
         }
     }
 
@@ -131,8 +138,8 @@ export default async function importOrders(
     for (const [groupKey, group] of groups.entries()) {
         let allProductsFound = true;
         for (const item of group.items) {
-            const price = productPrices.get(item.productId);
-            if (price === undefined) {
+            const data = productData.get(item.productId);
+            if (data === undefined) {
                 failed++;
                 errors.push({
                     row: item.originalRowIndex,
@@ -140,7 +147,8 @@ export default async function importOrders(
                 });
                 allProductsFound = false;
             } else {
-                item.amount = price * item.quantity;
+                item.amount = data.price * item.quantity;
+                (item as any).serviceTime = data.serviceTime;
                 group.totalAmount += item.amount;
             }
         }
@@ -166,14 +174,15 @@ export default async function importOrders(
                         createdBy: userId
                     }).returning({ id: orders.id });
 
-                    for (const item of group.items) {
-                        await innerTx.insert(orderItems).values({
-                            orderId: order.id,
-                            productId: item.productId,
-                            quantity: item.quantity,
-                            totalPrice: item.amount.toString()
-                        });
-                    }
+                        for (const item of group.items) {
+                            await innerTx.insert(orderItems).values({
+                                orderId: order.id,
+                                productId: item.productId,
+                                quantity: item.quantity,
+                                totalPrice: item.amount.toString(),
+                                serviceTime: (item as any).serviceTime
+                            });
+                        }
 
                     inserted += group.items.length;
                 });

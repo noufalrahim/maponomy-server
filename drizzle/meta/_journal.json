@@ -183,6 +183,13 @@
       "when": 1768738050464,
       "tag": "0025_burly_night_nurse",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1773909514685,
+      "tag": "0026_lush_silver_fox",
+      "breakpoints": true
     }
   ]
 }

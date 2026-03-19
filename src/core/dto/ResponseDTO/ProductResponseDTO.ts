@@ -6,6 +6,7 @@ export interface ProductResponseDTO {
   measureUnit: string;
   packageType: string;
   price: string;
+  serviceTime: number;
   active?: boolean;
   createdAt: Date;
   updatedAt: Date;

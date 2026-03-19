@@ -34,6 +34,8 @@ export const orderItems = pgTable(
       scale: 2,
     }).notNull(),
 
+    serviceTime: integer("service_time"),
+
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

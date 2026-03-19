@@ -4,6 +4,7 @@ import {
   varchar,
   timestamp,
   numeric,
+  integer,
   index,
   boolean,
 } from "drizzle-orm/pg-core";
@@ -34,6 +35,7 @@ export const products = pgTable(
     sku: varchar("sku").notNull(),
 
     active: boolean("active").notNull().default(true),
+    serviceTime: integer("service_time").notNull().default(0),
     image: varchar("image"),
 
     createdAt: timestamp("created_at", { withTimezone: true })

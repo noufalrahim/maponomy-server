@@ -33,23 +33,23 @@ export default async function exportRouteOptimisationOrders(
   );
 
   res.write(
-    "id,warehouse_id,warehouse_name,wbn,item_name,sku,destination_name,address,service_time_mins,package_weight_kg,lat,lon,opening_hour,closing_hour,date,type,contact,secondary_contact,dimension_unit,dimension_length,dimension_width,dimension_height,quantity\n"
+    "id,order_id,warehouse_id,warehouse_name,wbn,item_name,quantity,price,destination_name,address,service_time_mins,package_weight_kg,lat,lon,opening_hour,closing_hour,date,type,contact,secondary_contact,dimension_unit,dimension_length,dimension_width,dimension_height\n"
   );
 
   const rows = await db
     .select({
+      id: orderItems.id,
       orderId: orders.id,
       warehouseId: vendors.warehouseId,
       warehouseName: warehouses.name,
       itemName: products.name,
-      sku: products.sku,
+      itemQuantity: orderItems.quantity,
+      itemPrice: sql<string>`(${orderItems.totalPrice} / ${orderItems.quantity})`,
 
       destinationName: vendors.address,
       address: vendors.address,
 
-      serviceTimeMins: sql<number>`
-        EXTRACT(EPOCH FROM (${orders.deliveryDate} - ${orders.createdAt})) / 60
-      `,
+      serviceTimeMins: orderItems.serviceTime,
 
       lat: vendors.latitude,
       lon: vendors.longitude,
@@ -59,27 +59,28 @@ export default async function exportRouteOptimisationOrders(
       date: orders.deliveryDate,
 
       contact: vendors.phoneNumber,
-      quantity: orderItems.quantity
     })
     .from(orders)
     .innerJoin(vendors, eq(orders.vendorId, vendors.id))
     .leftJoin(warehouses, eq(vendors.warehouseId, warehouses.id))
-    .leftJoin(orderItems, eq(orderItems.orderId, orders.id))
-    .leftJoin(products, eq(orderItems.productId, products.id))
+    .innerJoin(orderItems, eq(orderItems.orderId, orders.id))
+    .innerJoin(products, eq(orderItems.productId, products.id))
     .where(and(gte(orders.deliveryDate, fromDate), lte(orders.deliveryDate, toDate)));
 
   for (const r of rows) {
     res.write(
       [
+        csvEscape(r.id),
         csvEscape(r.orderId),
         csvEscape(r.warehouseId),
         csvEscape(r.warehouseName),
         "",
         csvEscape(r.itemName),
-        csvEscape(r.sku),
+        csvEscape(r.itemQuantity),
+        csvEscape(r.itemPrice),
         csvEscape(r.destinationName),
         csvEscape(r.address),
-        csvEscape(Math.round(r.serviceTimeMins)),
+        csvEscape(r.serviceTimeMins),
         "",
         csvEscape(r.lat),
         csvEscape(r.lon),
@@ -93,7 +94,6 @@ export default async function exportRouteOptimisationOrders(
         "",
         "",
         "",
-        csvEscape(r.quantity)
       ].join(",") + "\n"
     );
   }

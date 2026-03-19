@@ -7,6 +7,8 @@ import {
   users,
   vendors,
   warehouses,
+  orderItems,
+  products,
 } from "../../infrastructure/db/schema";
 
 const vendorWarehouses = aliasedTable(warehouses, "vendor_warehouses");
@@ -35,11 +37,12 @@ export default async function exportOrders(
   );
 
   res.write(
-    "order_id,order_customer_id,order_warehouse_id,delivery_date,delivery_start_time,delivery_end_time,order_status,total_amount,order_created_by,order_created_at,order_updated_at,pushed_to_erp,creator_email,customer_id,customer_name,customer_user_id,customer_store_image,customer_latitude,customer_longitude,customer_address,customer_phone_number,customer_type,warehouse_id,warehouse_name,warehouse_address,warehouse_latitude,warehouse_longitude\n"
+    "id,order_id,order_customer_id,order_warehouse_id,delivery_date,delivery_start_time,delivery_end_time,order_status,total_amount,order_created_by,order_created_at,order_updated_at,pushed_to_erp,creator_email,customer_id,customer_name,customer_user_id,customer_store_image,customer_latitude,customer_longitude,customer_address,customer_phone_number,customer_type,warehouse_id,warehouse_name,warehouse_address,warehouse_latitude,warehouse_longitude,item_name,quantity,price\n"
   );
 
   const rows = await db
     .select({
+      id: orderItems.id,
       orderId: orders.id,
       orderCustomerId: orders.vendorId,
       orderWarehouseId: orders.warehouseId,
@@ -62,25 +65,32 @@ export default async function exportOrders(
       customerLatitude: vendors.latitude,
       customerLongitude: vendors.longitude,
       customerAddress: vendors.address,
-    customerPhoneNumber: vendors.phoneNumber,
+      customerPhoneNumber: vendors.phoneNumber,
       customerType: vendors.type,
 
       warehouseId: sql<string>`COALESCE(${warehouses.id}, ${vendorWarehouses.id})`,
       warehouseName: sql<string>`COALESCE(${warehouses.name}, ${vendorWarehouses.name})`,
       warehouseAddress: sql<string>`COALESCE(${warehouses.address}, ${vendorWarehouses.address})`,
       warehouseLatitude: sql<number>`COALESCE(${warehouses.latitude}, ${vendorWarehouses.latitude})`,
-      warehouseLongitude: sql<number>`COALESCE(${warehouses.longitude}, ${vendorWarehouses.longitude})`,
+      warehouseLongitude: sql<number>`COALESCE(${warehouses.latitude}, ${vendorWarehouses.latitude})`,
+      
+      itemName: products.name,
+      itemQuantity: orderItems.quantity,
+      itemPrice: sql<string>`(${orderItems.totalPrice} / ${orderItems.quantity})`,
     })
     .from(orders)
     .innerJoin(vendors, eq(orders.vendorId, vendors.id))
     .innerJoin(users, eq(orders.createdBy, users.id))
     .leftJoin(warehouses, eq(orders.warehouseId, warehouses.id))
     .leftJoin(vendorWarehouses, eq(vendorWarehouses.id, vendors.warehouseId))
+    .innerJoin(orderItems, eq(orderItems.orderId, orders.id))
+    .innerJoin(products, eq(orderItems.productId, products.id))
     .where(and(gte(orders.createdAt, from), lte(orders.createdAt, to)));
 
   for (const r of rows) {
     res.write(
       [
+        csvEscape(r.id),
         csvEscape(r.orderId),
         csvEscape(r.orderCustomerId),
         csvEscape(r.orderWarehouseId),
@@ -111,6 +121,10 @@ export default async function exportOrders(
         csvEscape(r.warehouseAddress),
         csvEscape(r.warehouseLatitude),
         csvEscape(r.warehouseLongitude),
+        
+        csvEscape(r.itemName),
+        csvEscape(r.itemQuantity),
+        csvEscape(r.itemPrice),
       ].join(",") + "\n"
     );
   }
