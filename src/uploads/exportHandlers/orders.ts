@@ -22,6 +22,25 @@ function csvEscape(value: unknown): string {
   return str;
 }
 
+function convertTo24Hour(timeStr: string): string {
+  if (!timeStr) return "";
+
+  const match = timeStr.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+  if (!match) return timeStr; // Return as is if it doesn't match 12-hour format
+
+  let [_, hours, minutes, modifier] = match;
+  let h = parseInt(hours, 10);
+
+  if (modifier.toUpperCase() === "PM" && h < 12) {
+    h += 12;
+  } else if (modifier.toUpperCase() === "AM" && h === 12) {
+    h = 0;
+  }
+
+  const hh = h < 10 ? `0${h}` : `${h}`;
+  return `${hh}:${minutes}`;
+}
+
 export default async function exportOrders(
   res: Response,
   fromDate: string,
@@ -73,7 +92,7 @@ export default async function exportOrders(
       warehouseAddress: sql<string>`COALESCE(${warehouses.address}, ${vendorWarehouses.address})`,
       warehouseLatitude: sql<number>`COALESCE(${warehouses.latitude}, ${vendorWarehouses.latitude})`,
       warehouseLongitude: sql<number>`COALESCE(${warehouses.latitude}, ${vendorWarehouses.latitude})`,
-      
+
       itemName: products.name,
       itemQuantity: orderItems.quantity,
       itemPrice: sql<string>`(${orderItems.totalPrice} / ${orderItems.quantity})`,
@@ -95,8 +114,8 @@ export default async function exportOrders(
         csvEscape(r.orderCustomerId),
         csvEscape(r.orderWarehouseId),
         csvEscape(r.deliveryDate),
-        csvEscape(r.deliveryStartTime),
-        csvEscape(r.deliveryEndTime),
+        csvEscape(convertTo24Hour(r.deliveryStartTime)),
+        csvEscape(convertTo24Hour(r.deliveryEndTime)),
         csvEscape(r.orderStatus),
         csvEscape(r.totalAmount),
         csvEscape(r.orderCreatedBy),
@@ -121,7 +140,7 @@ export default async function exportOrders(
         csvEscape(r.warehouseAddress),
         csvEscape(r.warehouseLatitude),
         csvEscape(r.warehouseLongitude),
-        
+
         csvEscape(r.itemName),
         csvEscape(r.itemQuantity),
         csvEscape(r.itemPrice),

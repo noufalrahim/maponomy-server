@@ -18,6 +18,25 @@ function csvEscape(value: unknown): string {
   return str;
 }
 
+function convertTo24Hour(timeStr: string): string {
+  if (!timeStr) return "";
+  
+  const match = timeStr.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+  if (!match) return timeStr; // Return as is if it doesn't match 12-hour format
+
+  let [_, hours, minutes, modifier] = match;
+  let h = parseInt(hours, 10);
+
+  if (modifier.toUpperCase() === "PM" && h < 12) {
+    h += 12;
+  } else if (modifier.toUpperCase() === "AM" && h === 12) {
+    h = 0;
+  }
+
+  const hh = h < 10 ? `0${h}` : `${h}`;
+  return `${hh}:${minutes}`;
+}
+
 export default async function exportRouteOptimisationOrders(
   res: Response,
   fromDate: string,
@@ -84,8 +103,8 @@ export default async function exportRouteOptimisationOrders(
         "",
         csvEscape(r.lat),
         csvEscape(r.lon),
-        csvEscape(r.openingHour),
-        csvEscape(r.closingHour),
+        csvEscape(convertTo24Hour(r.openingHour)),
+        csvEscape(convertTo24Hour(r.closingHour)),
         csvEscape(r.date),
         "delivery",
         csvEscape(r.contact),
