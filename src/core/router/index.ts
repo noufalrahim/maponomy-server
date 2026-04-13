@@ -12,17 +12,21 @@ import uploadRoute from './upload.route';
 import { requireAdmin } from '../../middleware/requireAdmin';
 import { requireStaff } from '../../middleware/requireStaff';
 
+import { requireAuth } from '../../middleware/requireAuth';
+import { requireRoles } from '../../middleware/requireRoles';
+import { Role } from '../../types';
+
 const router = express.Router();
 
 router.use("/auth", authRoute);
-router.use("/users", requireAdmin(), userRoute);
-router.use("/vendors", vendorRoute);
-router.use("/warehouses", requireStaff(), warehouseRoute);
-router.use("/salespersons", requireAdmin(), salespersonRoute)
-router.use("/products", productRoute)
-router.use("/categories", requireAdmin(), categoryRoute)
-router.use("/statistics", statisticsRoute)
-router.use("/orders", orderRoute)
-router.use("/uploads", requireAdmin(), uploadRoute)
+router.use("/users", requireRoles([Role.ADMIN]), userRoute);
+router.use("/vendors", requireAuth(), vendorRoute);
+router.use("/warehouses", requireRoles([Role.ADMIN, Role.WAREHOUSE_MANAGER]), warehouseRoute);
+router.use("/salespersons", requireRoles([Role.ADMIN, Role.WAREHOUSE_MANAGER]), salespersonRoute)
+router.use("/products", requireAuth(), productRoute)
+router.use("/categories", requireAuth(), categoryRoute)
+router.use("/statistics", requireAuth(), statisticsRoute)
+router.use("/orders", requireAuth(), orderRoute)
+router.use("/uploads", requireRoles([Role.ADMIN]), uploadRoute)
 
 export default router;

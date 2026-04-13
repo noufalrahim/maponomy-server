@@ -1,21 +1,20 @@
 import { Request, Response, NextFunction } from "express";
 import { eq } from "drizzle-orm";
 import { verifyToken, AuthError, getAccessToken } from "../utils/jwt";
-// import { tokenBlacklist } from "../services/TokenBlacklist";
-// import { getAccessToken } from "../utils/cookies";
-// import { validateSession } from "../utils/sessionValidator";
 import { users } from "../infrastructure/db/schema";
 import { db } from "../config/database";
 import { Role } from "../types";
 
 /**
- * Middleware to ensure only customer can access the route
+ * Middleware to ensure user has one of the required roles
  */
-export const requireCustomer = () => {
+export const requireRoles = (allowedRoles: Role[]) => {
     return async (req: Request, res: Response, next: NextFunction) => {
         try {
+            if (req.method === "OPTIONS") {
+                return res.sendStatus(204);
+            }
             const token = getAccessToken(req);
-
             if (!token) {
                 res.status(401).json({
                     error: "No token provided",
@@ -24,23 +23,11 @@ export const requireCustomer = () => {
                 return;
             }
 
-            // const isBlacklisted = await tokenBlacklist.isBlacklisted(token);
-            // if (isBlacklisted) {
-            //     res.status(401).json({
-            //         error: "Token has been revoked",
-            //         code: "TOKEN_REVOKED"
-            //     });
-            //     return;
-            // }
-
             const payload = verifyToken(token);
 
-            // const isValidSession = await validateSession(payload, req, res);
-            // if (!isValidSession) return;
-
-            if (payload.type !== Role.CUSTOMER && payload.type !== Role.ADMIN) {
+            if (!allowedRoles.includes(payload.type as Role)) {
                 res.status(403).json({
-                    error: "Access denied. Customer or Admin privileges required.",
+                    error: `Access denied. ${allowedRoles.join(" or ")} privileges required.`,
                     code: "INSUFFICIENT_PERMISSIONS"
                 });
                 return;
@@ -59,13 +46,16 @@ export const requireCustomer = () => {
                 return;
             }
 
-            if (user.role !== Role.CUSTOMER && user.role !== Role.ADMIN) {
+            if (!allowedRoles.includes(user.role as Role)) {
                 res.status(403).json({
-                    error: "Access denied. Customer or Admin privileges required.",
-                    code: "CUSTOMER_REQUIRED"
+                    error: `Access denied. ${allowedRoles.join(" or ")} privileges required.`,
+                    code: "ROLE_REQUIRED"
                 });
                 return;
             }
+
+            // Attach user to request for follow-up logic
+            (req as any).user = user;
 
             next();
         } catch (error) {

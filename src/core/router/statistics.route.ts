@@ -7,6 +7,9 @@ import { requireSalesperson } from "../../middleware/requireSalesperson";
 import { requireCustomer } from "../../middleware/requireCustomer";
 import { openApiRegistry } from "../../documentation/swagger-registry";
 
+import { requireRoles } from "../../middleware/requireRoles";
+import { Role } from "../../types";
+
 const router = Router();
 const controller = new StatisticsController();
 
@@ -28,10 +31,11 @@ const adminCrudRouter = createBaseRouter(
 );
 
 router.get("/dashboard", requireStaff(), controller.getDashboardStatistics);
+router.get("/salesperson/:salespersonId", requireRoles([Role.SALES_PERSON, Role.ADMIN]), controller.getSalespersonStatistics);
+router.get("/progress/salesperson/:salespersonId", requireRoles([Role.SALES_PERSON, Role.ADMIN]), controller.getSalespersonProgress);
+router.get("/progress/salesperson-progress", requireRoles([Role.ADMIN, Role.WAREHOUSE_MANAGER]), controller.getAllSalespersonProgress);
+router.get("/customers/:customerId", requireRoles([Role.CUSTOMER, Role.ADMIN]), controller.getCustomerStatistics)
+
 router.use("/", adminCrudRouter);
-router.get("/salesperson/:salespersonId", requireSalesperson(), controller.getSalespersonStatistics);
-router.get("/progress/salesperson/:salespersonId", requireSalesperson(), controller.getSalespersonProgress);
-router.get("/progress/salesperson-progress", requireAdmin(), controller.getAllSalespersonProgress);
-router.get("/customers/:customerId", requireCustomer(), controller.getCustomerStatistics)
 
 export default router;

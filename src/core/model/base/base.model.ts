@@ -78,6 +78,8 @@ count = async (where?: SQL): Promise<number> => {
   };
 
   findById = async (id: string | number): Promise<TRecord | null> => {
+    if (!id || id === "undefined" || id === "null") return null;
+
     const [row] = await this.find({
       where: eq((this.table as any).id, id),
       limit: 1,

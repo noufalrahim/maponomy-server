@@ -37,9 +37,9 @@ export const requireSalesperson = () => {
             // const isValidSession = await validateSession(payload, req, res);
             // if (!isValidSession) return;
 
-            if (payload.type !== 'salesperson') {
+            if (payload.type !== 'salesperson' && payload.type !== 'admin') {
                 res.status(403).json({
-                    error: "Access denied. Salesperson privileges required.",
+                    error: "Access denied. Salesperson or Admin privileges required.",
                     code: "INSUFFICIENT_PERMISSIONS"
                 });
                 return;
@@ -53,14 +53,14 @@ export const requireSalesperson = () => {
             if (!user) {
                 res.status(401).json({
                     error: "User not found",
-                    code: "ADMIN_NOT_FOUND"
+                    code: "USER_NOT_FOUND"
                 });
                 return;
             }
 
-            if (user.role !== 'salesperson') {
+            if (user.role !== 'salesperson' && user.role !== 'admin') {
                 res.status(403).json({
-                    error: "Access denied. Salesperson privileges required.",
+                    error: "Access denied. Salesperson or Admin privileges required.",
                     code: "SALESPERSON_REQUIRED"
                 });
                 return;

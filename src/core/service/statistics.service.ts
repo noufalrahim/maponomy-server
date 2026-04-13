@@ -5,6 +5,8 @@ import { eq } from "drizzle-orm";
 import { SalesPersonModel } from "../model/salesperson.model";
 import { VendorModel } from "../model/vendor.model";
 import { TokenPayload } from "../../utils/jwt";
+import { SalesPersonService } from "./salesperson.service";
+import { VendorService } from "./vendor.service";
 
 export class StatisticsService extends BaseService<
   OrderRecord,
@@ -20,17 +22,24 @@ export class StatisticsService extends BaseService<
   }
 
   public async getSalespersonProgress(salespersonId: string) {
-    const salespersonModal = new SalesPersonModel();
+    const salespersonService = new SalesPersonService();
 
-    const [salesperson] = await salespersonModal.find(
-      {
-        where: eq((salespersonModal as any).table.id, salespersonId),
-        limit: 1,
-      }
-    )
+    let salesperson = await salespersonService.findById(salespersonId);
+
+    if (!salesperson) {
+      const salespersons = await salespersonService.findByUserIds([salespersonId]);
+      salesperson = salespersons[0] || null;
+    }
 
     if (!salesperson || !salesperson.id) {
-      throw new Error("Salesperson not found");
+       return {
+        totalOrdersThisMonth: 0,
+        totalDeliveredOrdersThisMonth: 0,
+        totalPendingOrdersThisMonth: 0,
+        totalCancelledOrdersThisMonth: 0,
+        totalAmountAchievedThisMonth: 0,
+        totalAmountTargetThisMonth: 0,
+       }
     }
 
     return this.model.getSalespersonProgress(salesperson.userId, salesperson.monthlyTarget);
@@ -41,37 +50,47 @@ export class StatisticsService extends BaseService<
   }
 
   public async getSalespersonStatistics(salespersonId: string) {
+    const salespersonService = new SalesPersonService();
 
-    const salespersonModal = new SalesPersonModel();
+    let salesperson = await salespersonService.findById(salespersonId);
 
-    const [salesperson] = await salespersonModal.find({
-      where: eq((salespersonModal as any).table.id, salespersonId),
-      limit: 1,
-    })
-
-    console.log("salesperson: ", salesperson);
+    if (!salesperson) {
+      const salespersons = await salespersonService.findByUserIds([salespersonId]);
+      salesperson = salespersons[0] || null;
+    }
 
     if (!salesperson || !salesperson.id) {
-      throw new Error("Salesperson not found");
+       return {
+          totalVendors: 0,
+          totalOrders: 0,
+          totalAchievedThisMonth: 0,
+          achievementPercentage: 0,
+          weeklyBreakdown: []
+       }
     }
 
     return this.model.getSalespersonStatistics(salesperson.userId);
   }
 
   public async getCustomerStatistics(customerId: string) {
-    const customerModel = new VendorModel();
+    const customerService = new VendorService();
 
-    const [customer] = await customerModel.find({
-      where: eq((customerModel as any).table.id, customerId),
-      limit: 1,
-    })
+    let customer = await customerService.findById(customerId);
 
-    console.log("customer: ", customer);
-
-    if (!customer || !customer.id) {
-      throw new Error("Customer not found");
+    if (!customer) {
+      customer = await customerService.findByUserId(customerId);
     }
 
-    return this.model.getCustomerStatistics(customer.userId, customerId);
+    if (!customer || !customer.id) {
+      return {
+          totalOrders: 0,
+          totalApprovedOrders: 0,
+          totalPendingOrders: 0,
+          totalAmount: 0,
+          frequentlyOrderedProducts: [],
+      }
+    }
+
+    return this.model.getCustomerStatistics(customer.userId, customer.id);
   }
 }

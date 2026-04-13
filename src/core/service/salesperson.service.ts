@@ -56,12 +56,13 @@ export class SalesPersonService extends BaseService<
   async findByUserIds(
     userIds: string[]
   ): Promise<SalesPersonRecord[]> {
-    if (userIds.length === 0) return [];
+    const validIds = userIds.filter(id => id && id !== "undefined" && id !== "null");
+    if (validIds.length === 0) return [];
 
     return this.model.find({
       where: inArray(
         (this.model as any).table.userId,
-        userIds
+        validIds
       ),
     });
   }

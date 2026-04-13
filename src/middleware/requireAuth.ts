@@ -1,21 +1,19 @@
 import { Request, Response, NextFunction } from "express";
 import { eq } from "drizzle-orm";
 import { verifyToken, AuthError, getAccessToken } from "../utils/jwt";
-// import { tokenBlacklist } from "../services/TokenBlacklist";
-// import { getAccessToken } from "../utils/cookies";
-// import { validateSession } from "../utils/sessionValidator";
 import { users } from "../infrastructure/db/schema";
 import { db } from "../config/database";
-import { Role } from "../types";
 
 /**
- * Middleware to ensure only customer can access the route
+ * Middleware to ensure any authenticated user
  */
-export const requireCustomer = () => {
+export const requireAuth = () => {
     return async (req: Request, res: Response, next: NextFunction) => {
         try {
+            if (req.method === "OPTIONS") {
+                return res.sendStatus(204);
+            }
             const token = getAccessToken(req);
-
             if (!token) {
                 res.status(401).json({
                     error: "No token provided",
@@ -24,27 +22,7 @@ export const requireCustomer = () => {
                 return;
             }
 
-            // const isBlacklisted = await tokenBlacklist.isBlacklisted(token);
-            // if (isBlacklisted) {
-            //     res.status(401).json({
-            //         error: "Token has been revoked",
-            //         code: "TOKEN_REVOKED"
-            //     });
-            //     return;
-            // }
-
             const payload = verifyToken(token);
-
-            // const isValidSession = await validateSession(payload, req, res);
-            // if (!isValidSession) return;
-
-            if (payload.type !== Role.CUSTOMER && payload.type !== Role.ADMIN) {
-                res.status(403).json({
-                    error: "Access denied. Customer or Admin privileges required.",
-                    code: "INSUFFICIENT_PERMISSIONS"
-                });
-                return;
-            }
 
             const [user] = await db
                 .select()
@@ -59,13 +37,8 @@ export const requireCustomer = () => {
                 return;
             }
 
-            if (user.role !== Role.CUSTOMER && user.role !== Role.ADMIN) {
-                res.status(403).json({
-                    error: "Access denied. Customer or Admin privileges required.",
-                    code: "CUSTOMER_REQUIRED"
-                });
-                return;
-            }
+            // Attach user to request
+            (req as any).user = user;
 
             next();
         } catch (error) {

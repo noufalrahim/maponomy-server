@@ -8,6 +8,7 @@ import { openApiRegistry } from "../../documentation/swagger-registry";
 import { requireAdmin } from "../../middleware/requireAdmin";
 
 import { requireStaff } from "../../middleware/requireStaff";
+import { requireAuth } from "../../middleware/requireAuth";
 
 const router = Router();
 const controller = new OrderController();
@@ -29,11 +30,12 @@ const adminCrudRouter = createBaseRouter(
   }
 );
 
-router.use("/", requireStaff(), adminCrudRouter);
 router.get("/salesperson/:salespersonId", requireSalesperson(), controller.getAllBySalespersonId);
 router.get("/customer/:salespersonId", controller.getAllOrdersByCustomerUnderSalesperson);
 router.get("/customer/:customerId/daily-limit", controller.getDailyLimitByCustomerId);
 router.post("/bulk-orders", [requireSalesperson(), validateBody(createOrderRequestSchema.array())], controller.bulkCreate);
 router.post("/push-to-erp", requireAdmin(), controller.pushOrdersToErp)
+
+router.use("/", requireAuth(), adminCrudRouter);
 
 export default router;

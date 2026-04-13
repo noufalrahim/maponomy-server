@@ -1,5 +1,6 @@
 import { BaseFindOptions, BaseService } from "./base/base.service";
 import { OrderModel } from "../../core/model/order.model";
+import { and, eq } from "drizzle-orm";
 import {
   NewOrder,
   OrderRecord
@@ -38,7 +39,18 @@ export class OrderService extends BaseService<
   }
 
   async findAllOrders(options?: BaseFindOptions): Promise<OrderResponseDTO[]> {
-    const where = this.applyActiveFilter(this.compileWhere(options?.query?.where), options?.isAdmin);
+    let where = this.applyActiveFilter(this.compileWhere(options?.query?.where), options?.isAdmin);
+    where = this.applyWarehouseFilter(where, options?.currentUser);
+
+    // Apply role-based filtering for customers and salespersons
+    if (options?.isAdmin === false && options?.currentUser?.type !== 'warehouse_manager') {
+       const userId = options?.currentUser?.id;
+       if (userId) {
+         const userFilter = eq((this.model as any).table.createdBy, userId);
+         where = where ? and(where, userFilter) : userFilter;
+       }
+    }
+
     const orderBy = this.compileOrder(options?.query?.sort);
     return this.model.findAllOrders({
       where,
@@ -65,8 +77,19 @@ export class OrderService extends BaseService<
   }
 
   async countAllOrders(options?: BaseFindOptions): Promise<number> {
-    const where = this.applyActiveFilter(this.compileWhere(options?.query?.where), options?.isAdmin);
-    return this.model.countAllOrders(where);
+    let where = this.applyActiveFilter(this.compileWhere(options?.query?.where), options?.isAdmin);
+    where = this.applyWarehouseFilter(where, options?.currentUser);
+
+    // Apply role-based filtering for customers and salespersons
+    if (options?.isAdmin === false && options?.currentUser?.type !== 'warehouse_manager') {
+       const userId = options?.currentUser?.id;
+       if (userId) {
+         const userFilter = eq((this.model as any).table.createdBy, userId);
+         where = where ? and(where, userFilter) : userFilter;
+       }
+    }
+
+    return this.model.count(where);
   }
 
   async updateOrder(id: string, data: UpdateOrderRequestDTO): Promise<OrderRecord> {
@@ -82,10 +105,18 @@ export class OrderService extends BaseService<
     }
 
     const customerService = new VendorService()
-    const customer = await customerService.findById(customerId)
+    let customer = await customerService.findById(customerId)
 
-    if (!customer || !customer.userId || !customer.id) {
-      throw new Error("Customer not found")
+    if (!customer) {
+        // Try finding by userId
+        customer = await customerService.findByUserId(customerId)
+    }
+
+    if (!customer || !customer.id) {
+      return {
+        totalTodaysOrder: 0,
+        limitExceeded: false
+      }
     }
 
     return this.model.findDailyLimitByCustomerId(

@@ -24,7 +24,7 @@ async validateToken(
 ): Promise<
   UserRecord & {
     salesperson: SalesPersonRecord | null
-    customer: typeof vendors.$inferSelect | null
+    vendor: typeof vendors.$inferSelect | null
   }
 > {
   const tokenPayload = verifyToken(token)
@@ -36,7 +36,7 @@ async validateToken(
     .limit(1)
 
   if (userRec.length === 0) {
-    throw new Error("User not found")
+    throw new Error(`User not found for ID: ${tokenPayload.id}`)
   }
 
   const role = userRec[0].role
@@ -60,7 +60,7 @@ async validateToken(
     result = await db
       .select({
         user: users,
-        customer: vendors,
+        vendor: vendors,
       })
       .from(users)
       .leftJoin(
@@ -90,18 +90,21 @@ async validateToken(
   return {
     ...row.user,
     salesperson: role === Role.SALES_PERSON ? row.salesperson ?? null : null,
-    customer: role === Role.CUSTOMER ? row.customer ?? null : null,
+    vendor: role === Role.CUSTOMER ? row.vendor ?? null : null,
+    customer: role === Role.CUSTOMER ? row.vendor ?? null : null,
   }
 }
 
 
   async login(user: AuthLoginDTO): Promise<LoginResponseDTO> {
+    const normalizedEmail = user.email.trim().toLowerCase();
+
     const userRec = await db
       .select()
       .from(users)
       .where(
         and(
-          eq(users.email, user.email),
+          eq(users.email, normalizedEmail),
           or(
             eq(users.role, Role.SALES_PERSON),
             eq(users.role, Role.CUSTOMER)
@@ -111,10 +114,16 @@ async validateToken(
       .limit(1)
 
     if (userRec.length === 0) {
+       // Check if user exists but has different role to provide better error
+       const anyUserRec = await db.select().from(users).where(eq(users.email, normalizedEmail)).limit(1);
+       if (anyUserRec.length > 0) {
+         throw new Error(`User found but role '${anyUserRec[0].role}' is not allowed to login here`);
+       }
       throw new Error("User not found")
     }
 
     const role = userRec[0].role as Role
+    const userId = userRec[0].id;
 
     let result: any[]
 
@@ -129,7 +138,7 @@ async validateToken(
           salespersons,
           eq(salespersons.userId, users.id)
         )
-        .where(eq(users.email, user.email))
+        .where(eq(users.id, userId))
         .limit(1)
     } else {
       result = await db
@@ -142,7 +151,7 @@ async validateToken(
           vendors,
           eq(vendors.userId, users.id)
         )
-        .where(eq(users.email, user.email))
+        .where(eq(users.id, userId))
         .limit(1)
     }
 
@@ -172,14 +181,16 @@ async validateToken(
       ...safeUser,
       salesperson: role === Role.SALES_PERSON ? row.salesperson ?? null : null,
       vendor: role === Role.CUSTOMER ? row.vendor ?? null : null,
+      customer: role === Role.CUSTOMER ? row.vendor ?? null : null,
       token: accessToken,
     }
   }
 
 
   async registerUser(user: AuthDTO): Promise<SignupResponseDTO> {
+    const normalizedEmail = user.email.trim().toLowerCase();
     const existingUser = await this.model.find({
-      where: and(eq(users.email, user.email), eq(users.role, user.role)),
+      where: and(eq(users.email, normalizedEmail), eq(users.role, user.role)),
       limit: 1,
     });
 
@@ -190,6 +201,7 @@ async validateToken(
 
     const userRecord = await this.model.create({
       ...user,
+      email: normalizedEmail,
       password: hashedPassword,
       role: user.role,
     });
@@ -222,12 +234,11 @@ async validateToken(
   }
 
   async adminLogin(user: AuthLoginDTO): Promise<LoginResponseDTO> {
-
-    console.log("User: ", user);
+    const normalizedEmail = user.email.trim().toLowerCase();
 
     const result = await this.model.find({
       where: and(
-        eq(users.email, user.email), 
+        eq(users.email, normalizedEmail), 
         or(eq(users.role, Role.ADMIN), eq(users.role, Role.WAREHOUSE_MANAGER))
       ),
       limit: 1,
@@ -235,8 +246,8 @@ async validateToken(
 
     console.log("Result: ", result);
 
-    if (result.length === 0 || (result[0].role !== Role.ADMIN && result[0].role !== Role.WAREHOUSE_MANAGER)) {
-      throw new Error("User not found");
+    if (result.length === 0) {
+      throw new Error("Admin user not found");
     }
 
     const userRecord = result[0];

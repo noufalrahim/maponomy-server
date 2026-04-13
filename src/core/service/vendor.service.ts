@@ -1,8 +1,10 @@
 import { BaseFindOptions, BaseService } from "./base/base.service";
 import { VendorModel } from "../model/vendor.model";
+import { eq } from "drizzle-orm";
 import {
   NewVendor,
-  VendorRecord
+  VendorRecord,
+  vendors
 } from "../../infrastructure/db/schemas/vendor.schema";
 import { VendorRequestDTO, VendorUpdateDTO } from "../dto/RequestDTO/VendorRequestDTO";
 import { VendorSalespersonService } from "./vendor-salesperson.service";
@@ -115,4 +117,14 @@ export class VendorService extends BaseService<
     return authService.resetPassword(customer.userId, password);
 
   };
+
+  async findByUserId(userId: string): Promise<VendorRecord | null> {
+    if (!userId || userId === "undefined" || userId === "null") return null;
+
+    const rows = await this.model.find({
+      where: eq(vendors.userId, userId),
+      limit: 1,
+    });
+    return rows[0] || null;
+  }
 }

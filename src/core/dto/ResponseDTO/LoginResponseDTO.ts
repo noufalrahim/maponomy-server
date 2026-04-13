@@ -9,4 +9,5 @@ export interface LoginResponseDTO {
   updatedAt: Date;
   token: string;
   salesperson?: SalesPersonRecord | null;
+  vendor?: any | null;
 }

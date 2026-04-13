@@ -37,13 +37,15 @@ export class OrderController extends BaseController<
     const orders = await this.service.findAllOrders({
       query: body,
       fields,
-      isAdmin
+      isAdmin,
+      currentUser: this.getCurrentUser(req)
     });
     
     const count = await this.service.countAllOrders({
       query: body,
       fields,
-      isAdmin
+      isAdmin,
+      currentUser: this.getCurrentUser(req)
     });
     
     return sendSuccess(res, {
