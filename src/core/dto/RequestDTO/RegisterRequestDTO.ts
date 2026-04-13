@@ -5,7 +5,7 @@ export const authRegisterRequestSchema = z.object({
   email: z.string().email(),
   password: z.string().min(8),
   isActive: z.boolean().default(true),
-  role: z.enum([Role.ADMIN, Role.SALES_PERSON, Role.CUSTOMER])
+  role: z.enum([Role.ADMIN, Role.SALES_PERSON, Role.CUSTOMER, Role.WAREHOUSE_MANAGER])
 }).strict();
 
 export type AuthDTO = z.infer<typeof authRegisterRequestSchema>;

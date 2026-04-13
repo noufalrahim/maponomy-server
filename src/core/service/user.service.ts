@@ -7,6 +7,10 @@ import { NewUser, UserRecord, users } from "../../infrastructure/db/schema";
 export class UserService extends BaseService<UserRecord, NewUser> {
   protected readonly model = new UserModel();
 
+  protected readonly filterableFields = ["role", "isActive", "warehouseId", "email"];
+
+  protected readonly sortableFields = ["createdAt", "updatedAt", "email"];
+
   override async create(data: NewUser): Promise<UserRecord> {
     const existingUser = await this.model.find({
       where: eq(users.email, data.email),

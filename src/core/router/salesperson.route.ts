@@ -32,6 +32,7 @@ const adminCrudRouter = createBaseRouter(
 );
 
 router.post("/reset-password", controller.resetPassword);
+router.post("/reassign", controller.reassignVendors);
 router.use("/", adminCrudRouter);
 
 export default router;

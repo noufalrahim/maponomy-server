@@ -12,4 +12,10 @@ export class VendorSalespersonModel extends BaseModel<
   public async deleteByVendorId(vendorId: string) {
     return db.delete(this.table).where(eq(this.table.vendorId, vendorId));
   }
+
+  public async reassignSalesperson(oldSalespersonId: string, newSalespersonId: string) {
+    return db.update(this.table)
+      .set({ salespersonId: newSalespersonId })
+      .where(eq(this.table.salespersonId, oldSalespersonId));
+  }
 }

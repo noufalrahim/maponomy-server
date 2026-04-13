@@ -38,7 +38,7 @@ export class StatisticsController extends BaseController<
   })
 
   getDashboardStatistics = asyncHandler(async (req: Request, res: Response) => {
-    const dashboardStatistics = await this.service.getDashboardStatistics();
+    const dashboardStatistics = await this.service.getDashboardStatistics((req as any).user);
     return sendSuccess(res, {
       data: dashboardStatistics,
       message: `${this.resourceName} fetched successfully`,

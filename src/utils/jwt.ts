@@ -18,6 +18,7 @@ if (JWT_SECRET.length < 32) {
 export interface TokenPayload {
     id: string;
     type: Role;
+    warehouseId?: string | null;
 }
 
 export interface Tokens {

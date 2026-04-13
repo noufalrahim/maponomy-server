@@ -38,6 +38,17 @@ export abstract class BaseController<TRecord, TInsert> {
     }
   }
 
+  protected getCurrentUser(req: Request) {
+    try {
+      const token = getAccessToken(req);
+      if (!token) return undefined;
+      return verifyToken(token);
+    } catch {
+      return undefined;
+    }
+  }
+
+
   protected parseFieldSelection(req: Request): FieldSelection | undefined {
     const fieldsQuery = req.query.fields as string | undefined;
 
@@ -105,17 +116,19 @@ export abstract class BaseController<TRecord, TInsert> {
 
     const fields = this.parseFieldSelection(req);
     const isAdmin = this.getIsAdmin(req);
+    const currentUser = this.getCurrentUser(req);
 
     const data = await this.service.find({
       query: body,
       fields,
-      isAdmin
-    });
+      isAdmin,
+      currentUser
+    } as any);
 
     return sendSuccess(res, {
       data,
       message: `Found ${data.length} ${this.resourceName}`,
-      count: await this.service.count({ query: body, fields, isAdmin }),
+      count: await this.service.count({ query: body, fields, isAdmin, currentUser } as any),
       statusCode: 200,
     });
   });

@@ -69,7 +69,7 @@ async validateToken(
       )
       .where(eq(users.id, tokenPayload.id))
       .limit(1)
-  } else if(role === Role.ADMIN) {
+  } else if(role === Role.ADMIN || role === Role.WAREHOUSE_MANAGER) {
     result = await db
       .select({
         user: users,
@@ -226,13 +226,16 @@ async validateToken(
     console.log("User: ", user);
 
     const result = await this.model.find({
-      where: and(eq(users.email, user.email), eq(users.role, Role.ADMIN)),
+      where: and(
+        eq(users.email, user.email), 
+        or(eq(users.role, Role.ADMIN), eq(users.role, Role.WAREHOUSE_MANAGER))
+      ),
       limit: 1,
     });
 
     console.log("Result: ", result);
 
-    if (result.length === 0 || result[0].role != Role.ADMIN) {
+    if (result.length === 0 || (result[0].role !== Role.ADMIN && result[0].role !== Role.WAREHOUSE_MANAGER)) {
       throw new Error("User not found");
     }
 
@@ -251,7 +254,8 @@ async validateToken(
 
     const { accessToken } = generateTokens({
       id: safeUser.id,
-      type: "admin",
+      type: userRecord.role as Role,
+      warehouseId: userRecord.warehouseId,
     });
 
     return {

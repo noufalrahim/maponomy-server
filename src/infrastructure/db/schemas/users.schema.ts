@@ -7,6 +7,7 @@ import {
   boolean,
   index
 } from "drizzle-orm/pg-core";
+import { warehouses } from "./warehouse.schema";
 
 export const users = pgTable(
   "users",
@@ -18,6 +19,8 @@ export const users = pgTable(
     password: text("password").notNull(),
 
     role: varchar("role", { length: 50 }).notNull().default("user"),
+
+    warehouseId: uuid("warehouse_id").references(() => warehouses.id, { onDelete: "set null" }),
 
     isActive: boolean("is_active").notNull().default(true),
 

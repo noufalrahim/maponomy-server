@@ -8,6 +8,7 @@ import { SalesPersonRequestDTO } from "../dto";
 import { Role } from "../../types";
 import { AuthService } from "./auth.service";
 import { inArray } from "drizzle-orm";
+import { VendorSalespersonModel } from "../model/vendor-salesperson.model";
 
 export class SalesPersonService extends BaseService<
   SalesPersonRecord,
@@ -97,6 +98,11 @@ export class SalesPersonService extends BaseService<
 
     return authService.resetPassword(salesperson.userId, password);
 
+  }
+
+  async reassignVendors(oldSalespersonId: string, newSalespersonId: string) {
+    const vendorSalespersonModel = new VendorSalespersonModel();
+    return vendorSalespersonModel.reassignSalesperson(oldSalespersonId, newSalespersonId);
   }
 
 }

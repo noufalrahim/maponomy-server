@@ -69,6 +69,19 @@ export class SalesPersonController extends BaseController<
       message: `${this.resourceName} deleted successfully`,
       statusCode: 200
     });
-  }) 
+  })
+
+  reassignVendors = asyncHandler(async (req: Request, res: Response) => {
+    const { oldSalespersonId, newSalespersonId } = req.body;
+    if (!oldSalespersonId || !newSalespersonId) {
+      throw new Error("Both old and new salesperson IDs are required");
+    }
+    const result = await this.service.reassignVendors(oldSalespersonId, newSalespersonId);
+    return sendSuccess(res, {
+      data: result,
+      message: "Vendors reassigned successfully",
+      statusCode: 200
+    });
+  });
 
 }

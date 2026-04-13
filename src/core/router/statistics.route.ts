@@ -2,6 +2,7 @@ import { Router } from "express";
 import { StatisticsController } from "../controller/statistics.controller";
 import createBaseRouter from "./base/base.route";
 import { requireAdmin } from "../../middleware/requireAdmin";
+import { requireStaff } from "../../middleware/requireStaff";
 import { requireSalesperson } from "../../middleware/requireSalesperson";
 import { requireCustomer } from "../../middleware/requireCustomer";
 import { openApiRegistry } from "../../documentation/swagger-registry";
@@ -26,7 +27,7 @@ const adminCrudRouter = createBaseRouter(
   }
 );
 
-router.get("/dashboard", requireAdmin(), controller.getDashboardStatistics);
+router.get("/dashboard", requireStaff(), controller.getDashboardStatistics);
 router.use("/", adminCrudRouter);
 router.get("/salesperson/:salespersonId", requireSalesperson(), controller.getSalespersonStatistics);
 router.get("/progress/salesperson/:salespersonId", requireSalesperson(), controller.getSalespersonProgress);

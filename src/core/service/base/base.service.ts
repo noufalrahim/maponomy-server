@@ -17,10 +17,13 @@ import { BaseModel } from "../../model/base/base.model";
 import { FieldSelection, QueryNode, QuerySpec } from "../../../types";
 import { QUERY_FIELD_MAP } from "../../../utils/query-field-mapper";
 
+import { TokenPayload } from "../../../utils/jwt";
+
 export interface BaseFindOptions {
   query?: QuerySpec;
   fields?: FieldSelection;
   isAdmin?: boolean;
+  currentUser?: TokenPayload;
 }
 export abstract class BaseService<
   TRecord extends Record<string, any>,
@@ -42,6 +45,20 @@ export abstract class BaseService<
     if (isAdmin === false && (this.model as any).table.active) {
       const activeFilter = eq((this.model as any).table.active, true);
       return where ? and(where, activeFilter) : activeFilter;
+    }
+    return where;
+  }
+
+  protected applyWarehouseFilter(where: SQL | undefined, currentUser?: TokenPayload): SQL | undefined {
+    if (currentUser?.type === 'warehouse_manager' && currentUser.warehouseId) {
+      if ((this.model as any).table.warehouseId) {
+        const warehouseFilter = eq((this.model as any).table.warehouseId, currentUser.warehouseId);
+        return where ? and(where, warehouseFilter) : warehouseFilter;
+      }
+      if ((this.model as any).table[Symbol.for("drizzle:Name")] === 'warehouses') {
+         const warehouseFilter = eq((this.model as any).table.id, currentUser.warehouseId);
+         return where ? and(where, warehouseFilter) : warehouseFilter;
+      }
     }
     return where;
   }
@@ -138,7 +155,8 @@ export abstract class BaseService<
   }
 
   async find(options: BaseFindOptions): Promise<TRecord[]> {
-    const where = this.applyActiveFilter(this.compileWhere(options.query?.where), options.isAdmin);
+    let where = this.applyActiveFilter(this.compileWhere(options.query?.where), options.isAdmin);
+    where = this.applyWarehouseFilter(where, options.currentUser);
     const orderBy = this.compileOrder(options.query?.sort);
 
     return this.model.find({
@@ -158,7 +176,8 @@ export abstract class BaseService<
   }
 
   async count(options?: BaseFindOptions): Promise<number> {
-    const where = this.applyActiveFilter(this.compileWhere(options?.query?.where), options?.isAdmin);
+    let where = this.applyActiveFilter(this.compileWhere(options?.query?.where), options?.isAdmin);
+    where = this.applyWarehouseFilter(where, options?.currentUser);
     return this.model.count(where);
   }
 

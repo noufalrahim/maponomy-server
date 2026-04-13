@@ -7,6 +7,8 @@ import { createOrderRequestSchema } from "../dto/RequestDTO/OrderRequestDTO";
 import { openApiRegistry } from "../../documentation/swagger-registry";
 import { requireAdmin } from "../../middleware/requireAdmin";
 
+import { requireStaff } from "../../middleware/requireStaff";
+
 const router = Router();
 const controller = new OrderController();
 
@@ -27,7 +29,7 @@ const adminCrudRouter = createBaseRouter(
   }
 );
 
-router.use("/", adminCrudRouter);
+router.use("/", requireStaff(), adminCrudRouter);
 router.get("/salesperson/:salespersonId", requireSalesperson(), controller.getAllBySalespersonId);
 router.get("/customer/:salespersonId", controller.getAllOrdersByCustomerUnderSalesperson);
 router.get("/customer/:customerId/daily-limit", controller.getDailyLimitByCustomerId);

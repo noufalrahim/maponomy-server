@@ -4,6 +4,7 @@ import { NewOrder, OrderRecord } from "../../infrastructure/db/schema";
 import { eq } from "drizzle-orm";
 import { SalesPersonModel } from "../model/salesperson.model";
 import { VendorModel } from "../model/vendor.model";
+import { TokenPayload } from "../../utils/jwt";
 
 export class StatisticsService extends BaseService<
   OrderRecord,
@@ -35,8 +36,8 @@ export class StatisticsService extends BaseService<
     return this.model.getSalespersonProgress(salesperson.userId, salesperson.monthlyTarget);
   }
 
-  public async getDashboardStatistics() {
-    return this.model.getDashboardStatistics();
+  public async getDashboardStatistics(currentUser?: TokenPayload) {
+    return this.model.getDashboardStatistics(currentUser?.warehouseId ?? undefined);
   }
 
   public async getSalespersonStatistics(salespersonId: string) {

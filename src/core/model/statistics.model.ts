@@ -170,7 +170,7 @@ export class StatisticsModel extends BaseModel<
     };
   }
 
-  public async getDashboardStatistics() {
+  public async getDashboardStatistics(warehouseId?: string) {
     const [
       [{ totalOrdersPlaced }],
       [{ totalRevenue }],
@@ -181,7 +181,8 @@ export class StatisticsModel extends BaseModel<
         .select({
           totalOrdersPlaced: sql<number>`COUNT(*)`,
         })
-        .from(orders),
+        .from(orders)
+        .where(warehouseId ? eq(orders.warehouseId, warehouseId) : undefined),
 
       db
         .select({
@@ -193,7 +194,8 @@ export class StatisticsModel extends BaseModel<
           )
         `,
         })
-        .from(orders),
+        .from(orders)
+        .where(warehouseId ? eq(orders.warehouseId, warehouseId) : undefined),
 
       db
         .select({

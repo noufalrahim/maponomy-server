@@ -24,7 +24,8 @@ export class OrderService extends BaseService<
     "salesperson.name",
     "id",
     "pushedToErp",
-    "createdAt"
+    "createdAt",
+    "warehouseId"
   ];
 
   protected readonly sortableFields = [

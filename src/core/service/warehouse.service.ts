@@ -16,6 +16,7 @@ export class WarehouseService extends BaseService<
     "longitude",
     "name",
     "address",
+    "id"
   ];
 
   protected readonly sortableFields = [

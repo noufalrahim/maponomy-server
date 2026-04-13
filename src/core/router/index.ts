@@ -10,13 +10,14 @@ import statisticsRoute from './statistics.route';
 import orderRoute from './order.route';
 import uploadRoute from './upload.route';
 import { requireAdmin } from '../../middleware/requireAdmin';
+import { requireStaff } from '../../middleware/requireStaff';
 
 const router = express.Router();
 
 router.use("/auth", authRoute);
 router.use("/users", requireAdmin(), userRoute);
 router.use("/vendors", vendorRoute);
-router.use("/warehouses", requireAdmin(), warehouseRoute);
+router.use("/warehouses", requireStaff(), warehouseRoute);
 router.use("/salespersons", requireAdmin(), salespersonRoute)
 router.use("/products", productRoute)
 router.use("/categories", requireAdmin(), categoryRoute)
