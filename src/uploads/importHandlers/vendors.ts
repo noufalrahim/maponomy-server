@@ -40,22 +40,36 @@ export default async function importVendors(
         csv({
           mapHeaders: ({ header }) => {
             const h = header.toLowerCase().trim();
-            if (h === "lat" || h === "latitude") return "latitude";
-            if (h === "lng" || h === "long" || h === "longitude")
+            if (h === "lat" || h === "latitude" || h === "latitutde" || h === "lattitude") return "latitude";
+            if (h === "lng" || h === "long" || h === "longitude" || h === "longitutde" || h === "longtitude")
               return "longitude";
             if (
               h === "phone" ||
               h === "phoneno" ||
               h === "phone_number" ||
-              h === "phone number"
+              h === "phone number" ||
+              h === "mobile" ||
+              h === "contact"
             )
               return "phone_number";
             if (h === "email" || h === "email_address" || h === "email address")
               return "email";
-            if (h === "name" || h === "customer_name" || h === "customer name")
+            if (h === "name" || h === "customer_name" || h === "customer name" || h === "store name" || h === "store_name" || h === "vendor name")
               return "name";
-            if (h === "address" || h === "customer_address" || h === "customer address")
+            if (h === "address" || h === "customer_address" || h === "customer address" || h === "location" || h === "geo_address")
               return "address";
+            if (h === "salesperson" || h === "salesperson_id" || h === "salespersonid" || h === "sales_rep")
+              return "salespersonid";
+            if (h === "warehouse" || h === "warehouse_id" || h === "warehouseid")
+              return "warehouse_id";
+            if (h === "type" || h === "vendor_type" || h === "customer_type")
+              return "type";
+            if (h === "password" || h === "pass")
+              return "password";
+            if (h === "active" || h === "is_active")
+              return "active";
+            if (h === "image" || h === "store_image" || h === "logo")
+              return "store_image";
             return h.replace(/\s+/g, "_");
           },
         })
@@ -94,17 +108,21 @@ export default async function importVendors(
         }
 
         // Parse latitude and longitude more robustly
-        let latitude = 0;
-        let longitude = 0;
+        let latitude: number | undefined;
+        let longitude: number | undefined;
         
-        if (r.latitude !== undefined && r.latitude !== null && r.latitude !== "") {
-          latitude = parseFloat(String(r.latitude).replace(/[^\d.-]/g, ''));
-        }
-        if (r.longitude !== undefined && r.longitude !== null && r.longitude !== "") {
-          longitude = parseFloat(String(r.longitude).replace(/[^\d.-]/g, ''));
-        }
+        const parseCoord = (v: any) => {
+          if (v === undefined || v === null || v === "") return undefined;
+          const s = String(v).trim();
+          if (s === "") return undefined;
+          const parsed = parseFloat(s.replace(/[^\d.-]/g, ''));
+          return isNaN(parsed) ? null : parsed;
+        };
 
-        if (isNaN(latitude) || isNaN(longitude)) {
+        const rawLat = parseCoord(r.latitude);
+        const rawLong = parseCoord(r.longitude);
+
+        if (rawLat === null || rawLong === null) {
           failed++;
           errors.push({
             row: i + 1,
@@ -112,6 +130,9 @@ export default async function importVendors(
           });
           return;
         }
+
+        latitude = rawLat;
+        longitude = rawLong;
 
         // Check for existing user by email
         const [foundUser] = await trx
@@ -126,17 +147,32 @@ export default async function importVendors(
           .from(vendors)
           .where(eq(vendors.phoneNumber, phoneNumber))
           .limit(1);
-
         try {
-          let hashedPassword = password ? await bcrypt.hash(password, 10) : undefined;
-          let targetUserId: string;
+          const hashedPassword = password ? await bcrypt.hash(password, 10) : undefined;
           let targetVendorId: string | null = null;
+          let targetUserId: string | null = null;
           let isUpdate = false;
 
-          if (foundUser || foundVendor) {
+          // Strategy: find existing vendor first (by phone or by user email)
+          if (foundVendor) {
+            targetVendorId = foundVendor.id;
+            targetUserId = foundVendor.userId;
             isUpdate = true;
-            targetUserId = foundUser ? foundUser.id : foundVendor!.userId;
-            
+          } else if (foundUser) {
+            targetUserId = foundUser.id;
+            // Check if this user has a vendor profile
+            const [v] = await trx
+              .select({ id: vendors.id })
+              .from(vendors)
+              .where(eq(vendors.userId, targetUserId))
+              .limit(1);
+            if (v) {
+              targetVendorId = v.id;
+              isUpdate = true;
+            }
+          }
+
+          if (isUpdate && targetUserId) {
             // Update User
             const userUpdateData: any = {
               email,
@@ -151,40 +187,42 @@ export default async function importVendors(
               .set(userUpdateData)
               .where(eq(users.id, targetUserId));
 
-            // Find Vendor if not already found
-            if (foundVendor && foundVendor.userId === targetUserId) {
-              targetVendorId = foundVendor.id;
-            } else {
-              const [v] = await trx
-                .select({ id: vendors.id })
-                .from(vendors)
-                .where(eq(vendors.userId, targetUserId))
-                .limit(1);
-              if (v) targetVendorId = v.id;
-            }
-
             if (targetVendorId) {
               // Update existing vendor
+              const vendorUpdateData: any = {
+                name,
+                address,
+                phoneNumber,
+                warehouseId: normalize(r.warehouse_id),
+                storeImage: normalize(r.store_image),
+                type: normalize(r.type) ?? "external",
+                active:
+                  r.active !== undefined
+                    ? r.active.trim().toLowerCase() === "true" ||
+                    r.active.trim().toLowerCase() === "active"
+                    : true,
+              };
+
+              // Only update coordinates if they are provided in CSV
+              if (latitude !== undefined) vendorUpdateData.latitude = latitude;
+              if (longitude !== undefined) vendorUpdateData.longitude = longitude;
+
               await trx
                 .update(vendors)
-                .set({
-                  name,
-                  address,
-                  phoneNumber,
-                  warehouseId: normalize(r.warehouse_id),
-                  latitude,
-                  longitude,
-                  storeImage: normalize(r.store_image),
-                  type: normalize(r.type) ?? "external",
-                  active:
-                    r.active !== undefined
-                      ? r.active.trim().toLowerCase() === "true" ||
-                      r.active.trim().toLowerCase() === "active"
-                      : true,
-                })
+                .set(vendorUpdateData)
                 .where(eq(vendors.id, targetVendorId));
             } else {
               // User exists but has no vendor profile, create one
+              // Coordinates are required for new profiles
+              if (latitude === undefined || longitude === undefined) {
+                failed++;
+                errors.push({
+                  row: i + 1,
+                  reason: "Latitude and longitude are required for creating new customer profiles.",
+                });
+                return;
+              }
+
               const [vendor] = await trx
                 .insert(vendors)
                 .values({
@@ -205,12 +243,21 @@ export default async function importVendors(
             
             existing++;
           } else {
-            // New record - password is required for new records
+            // New record - coordinates and password are required
             if (!password) {
               failed++;
               errors.push({
                 row: i + 1,
                 reason: "Password is required for new customer records",
+              });
+              return;
+            }
+
+            if (latitude === undefined || longitude === undefined) {
+              failed++;
+              errors.push({
+                row: i + 1,
+                reason: "Latitude and longitude are required for new customer records",
               });
               return;
             }
