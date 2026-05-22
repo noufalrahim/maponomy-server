@@ -12,28 +12,26 @@ function csvEscape(value: unknown): string {
 }
 
 export default async function exportWarehouses(res: Response) {
-  res.setHeader("Content-Type", "text/csv");
-  res.setHeader(
-    "Content-Disposition",
-    "attachment; filename=warehouses.csv"
-  );
-
-  res.write("id,name,address,latitude,longitude,active\n");
-
   const rows = await db.select().from(warehouses);
 
-  for (const w of rows) {
-    res.write(
-      [
-        csvEscape(w.id),
-        csvEscape(w.name),
-        csvEscape(w.address),
-        csvEscape(w.latitude),
-        csvEscape(w.longitude),
-        csvEscape(w.active),
-      ].join(",") + "\n"
-    );
-  }
+  // Headers are already set by the ExportController
 
-  res.end();
+  try {
+    res.write("id,name,address,latitude,longitude,active\n");
+
+    for (const w of rows) {
+      res.write(
+        [
+          csvEscape(w.id),
+          csvEscape(w.name),
+          csvEscape(w.address),
+          csvEscape(w.latitude),
+          csvEscape(w.longitude),
+          csvEscape(w.active),
+        ].join(",") + "\n"
+      );
+    }
+  } finally {
+    res.end();
+  }
 }

@@ -17,19 +17,6 @@ export default async function exportProducts(
   fromDate: string,
   toDate: string
 ) {
-  const from = new Date(`${fromDate}T00:00:00.000Z`);
-  const to = new Date(`${toDate}T23:59:59.999Z`);
-
-  res.setHeader("Content-Type", "text/csv");
-  res.setHeader(
-    "Content-Disposition",
-    "attachment; filename=products.csv"
-  );
-
-  res.write(
-    "category_name,name,measure_unit,package_type,price,quantity_sold,sku,active,image\n"
-  );
-
   const rows = await db
     .select({
       categoryName: categories.name,
@@ -43,29 +30,32 @@ export default async function exportProducts(
       image: products.image,
     })
     .from(products)
-    .leftJoin(categories, eq(products.categoryId, categories.id))
-    .where(
-      and(
-        gte(products.createdAt, from),
-        lte(products.createdAt, to)
-      )
-    );
+    .leftJoin(categories, eq(products.categoryId, categories.id));
 
-  for (const r of rows) {
+  // Headers are already set by the ExportController
+
+  try {
     res.write(
-      [
-        csvEscape(r.categoryName),
-        csvEscape(r.name),
-        csvEscape(r.measureUnit),
-        csvEscape(r.packageType),
-        csvEscape(r.price),
-        csvEscape(r.quantitySold),
-        csvEscape(r.sku),
-        csvEscape(r.active),
-        csvEscape(r.image),
-      ].join(",") + "\n"
+      "category_name,name,measure_unit,package_type,price,quantity_sold,sku,active,image\n"
     );
-  }
 
-  res.end();
+    for (const r of rows) {
+      res.write(
+        [
+          csvEscape(r.categoryName),
+          csvEscape(r.name),
+          csvEscape(r.measureUnit),
+          csvEscape(r.packageType),
+          csvEscape(r.price),
+          csvEscape(r.quantitySold),
+          csvEscape(r.sku),
+          csvEscape(r.active),
+          csvEscape(r.image),
+        ].join(",") + "\n"
+      );
+    }
+  } finally {
+    res.end();
+  }
 }
+

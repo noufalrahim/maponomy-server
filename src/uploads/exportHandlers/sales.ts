@@ -21,16 +21,6 @@ export default async function exportSales(
   const from = new Date(`${fromDate}T00:00:00.000Z`);
   const to = new Date(`${toDate}T23:59:59.999Z`);
 
-  res.setHeader("Content-Type", "text/csv");
-  res.setHeader(
-    "Content-Disposition",
-    "attachment; filename=sales.csv"
-  );
-
-  res.write(
-    "email,role,name,phone_number,monthly_target,active,created_at\n"
-  );
-
   const rows = await db
     .select({
       email: users.email,
@@ -42,27 +32,29 @@ export default async function exportSales(
       createdAt: salespersons.createdAt,
     })
     .from(salespersons)
-    .innerJoin(users, eq(salespersons.userId, users.id))
-    .where(
-      and(
-        gte(salespersons.createdAt, from),
-        lte(salespersons.createdAt, to)
-      )
-    );
+    .innerJoin(users, eq(salespersons.userId, users.id));
 
-  for (const r of rows) {
+  // Headers are already set by the ExportController
+
+  try {
     res.write(
-      [
-        csvEscape(r.email),
-        csvEscape(r.role),
-        csvEscape(r.name),
-        csvEscape(r.phoneNumber),
-        csvEscape(r.monthlyTarget),
-        csvEscape(r.active),
-        csvEscape(r.createdAt.toISOString()),
-      ].join(",") + "\n"
+      "email,role,name,phone_number,monthly_target,active,created_at\n"
     );
-  }
 
-  res.end();
+    for (const r of rows) {
+      res.write(
+        [
+          csvEscape(r.email),
+          csvEscape(r.role),
+          csvEscape(r.name),
+          csvEscape(r.phoneNumber),
+          csvEscape(r.monthlyTarget),
+          csvEscape(r.active),
+          csvEscape(r.createdAt instanceof Date ? r.createdAt.toISOString() : r.createdAt),
+        ].join(",") + "\n"
+      );
+    }
+  } finally {
+    res.end();
+  }
 }
