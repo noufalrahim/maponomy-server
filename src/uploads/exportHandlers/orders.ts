@@ -9,6 +9,8 @@ import {
   warehouses,
   orderItems,
   products,
+  vendorSalespersons,
+  salespersons,
 } from "../../infrastructure/db/schema";
 
 const vendorWarehouses = aliasedTable(warehouses, "vendor_warehouses");
@@ -56,7 +58,7 @@ export default async function exportOrders(
   );
 
   res.write(
-    "id,order_id,order_customer_id,order_warehouse_id,delivery_date,delivery_start_time,delivery_end_time,order_status,total_amount,order_created_by,order_created_at,order_updated_at,pushed_to_erp,creator_email,customer_id,customer_name,customer_user_id,customer_store_image,customer_latitude,customer_longitude,customer_address,customer_phone_number,customer_type,warehouse_id,warehouse_name,warehouse_address,warehouse_latitude,warehouse_longitude,item_name,quantity,price\n"
+    "id,order_id,order_customer_id,order_warehouse_id,delivery_date,delivery_start_time,delivery_end_time,order_status,total_amount,order_created_by,order_created_at,order_updated_at,pushed_to_erp,creator_email,customer_id,customer_name,customer_user_id,customer_store_image,customer_latitude,customer_longitude,customer_address,customer_phone_number,customer_type,salesperson_id,salesperson_name,warehouse_id,warehouse_name,warehouse_address,warehouse_latitude,warehouse_longitude,item_name,quantity,price\n"
   );
 
   const rows = await db
@@ -87,11 +89,24 @@ export default async function exportOrders(
       customerPhoneNumber: vendors.phoneNumber,
       customerType: vendors.type,
 
+      salespersonId: sql<string>`(
+        SELECT COALESCE(string_agg(s.id::text, ', '), '')
+        FROM ${vendorSalespersons} vs
+        JOIN ${salespersons} s ON vs.salesperson_id = s.id
+        WHERE vs.vendor_id = ${orders.vendorId}
+      )`,
+      salespersonName: sql<string>`(
+        SELECT COALESCE(string_agg(s.name, ', '), '')
+        FROM ${vendorSalespersons} vs
+        JOIN ${salespersons} s ON vs.salesperson_id = s.id
+        WHERE vs.vendor_id = ${orders.vendorId}
+      )`,
+
       warehouseId: sql<string>`COALESCE(${warehouses.id}, ${vendorWarehouses.id})`,
       warehouseName: sql<string>`COALESCE(${warehouses.name}, ${vendorWarehouses.name})`,
       warehouseAddress: sql<string>`COALESCE(${warehouses.address}, ${vendorWarehouses.address})`,
       warehouseLatitude: sql<number>`COALESCE(${warehouses.latitude}, ${vendorWarehouses.latitude})`,
-      warehouseLongitude: sql<number>`COALESCE(${warehouses.latitude}, ${vendorWarehouses.latitude})`,
+      warehouseLongitude: sql<number>`COALESCE(${warehouses.longitude}, ${vendorWarehouses.longitude})`,
 
       itemName: products.name,
       itemQuantity: orderItems.quantity,
@@ -119,8 +134,8 @@ export default async function exportOrders(
         csvEscape(r.orderStatus),
         csvEscape(r.totalAmount),
         csvEscape(r.orderCreatedBy),
-        csvEscape(r.orderCreatedAt.toISOString()),
-        csvEscape(r.orderUpdatedAt.toISOString()),
+        csvEscape(r.orderCreatedAt instanceof Date ? r.orderCreatedAt.toISOString() : r.orderCreatedAt),
+        csvEscape(r.orderUpdatedAt instanceof Date ? r.orderUpdatedAt.toISOString() : r.orderUpdatedAt),
         r.pushedToErp ? "Yes" : "No",
 
         csvEscape(r.creatorEmail),
@@ -134,6 +149,9 @@ export default async function exportOrders(
         csvEscape(r.customerAddress),
         csvEscape(r.customerPhoneNumber),
         csvEscape(r.customerType),
+
+        csvEscape(r.salespersonId),
+        csvEscape(r.salespersonName),
 
         csvEscape(r.warehouseId),
         csvEscape(r.warehouseName),

@@ -27,6 +27,9 @@ const adminCrudRouter = createBaseRouter(
   }
 );
 
+// Reset password for any user (e.g. warehouse managers)
+router.post("/reset-password", controller.resetPassword);
+
 router.use(
   "/",
   // requireSuperAdmin(),

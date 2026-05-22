@@ -28,5 +28,19 @@ export class UserService extends BaseService<UserRecord, NewUser> {
       password: hashedPassword,
     });
   }
+
+  async resetPassword(userId: string, password: string): Promise<UserRecord> {
+    const user = await this.model.findById(userId);
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    const hashedPassword = await bcryptjs.hash(password.trim(), 10);
+
+    return this.model.updateById(userId, {
+      password: hashedPassword,
+    });
+  }
   
 }

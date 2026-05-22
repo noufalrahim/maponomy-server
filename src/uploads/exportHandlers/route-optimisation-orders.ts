@@ -7,6 +7,8 @@ import {
   products,
   orderItems,
   warehouses,
+  vendorSalespersons,
+  salespersons,
 } from "../../infrastructure/db/schema";
 
 function csvEscape(value: unknown): string {
@@ -30,7 +32,7 @@ function convertTo24Hour(timeStr: string): string {
   if (modifier.toUpperCase() === "PM" && h < 12) {
     h += 12;
   } else if (modifier.toUpperCase() === "AM" && h === 12) {
-    h = 0;
+    h = 0; 
   }
 
   const hh = h < 10 ? `0${h}` : `${h}`;
@@ -42,31 +44,35 @@ export default async function exportRouteOptimisationOrders(
   fromDate: string,
   toDate: string
 ) {
-  const from = new Date(`${fromDate}T00:00:00.000Z`);
-  const to = new Date(`${toDate}T23:59:59.999Z`);
-
-  res.setHeader("Content-Type", "text/csv");
-  res.setHeader(
-    "Content-Disposition",
-    "attachment; filename=route_optimisation_orders.csv"
-  );
-
-  res.write(
-    "id,order_id,warehouse_id,warehouse_name,wbn,item_name,quantity,price,destination_name,address,service_time_mins,package_weight_kg,lat,lon,opening_hour,closing_hour,date,type,contact,secondary_contact,dimension_unit,dimension_length,dimension_width,dimension_height\n"
-  );
-
+  // fromDate and toDate are used directly in the query as strings
   const rows = await db
     .select({
       id: orderItems.id,
       orderId: orders.id,
+
+      salespersonId: sql<string>`(
+        SELECT COALESCE(string_agg(s.id::text, ', '), '')
+        FROM ${vendorSalespersons} vs
+        JOIN ${salespersons} s ON vs.salesperson_id = s.id
+        WHERE vs.vendor_id = ${orders.vendorId}
+      )`,
+      salespersonName: sql<string>`(
+        SELECT COALESCE(string_agg(s.name, ', '), '')
+        FROM ${vendorSalespersons} vs
+        JOIN ${salespersons} s ON vs.salesperson_id = s.id
+        WHERE vs.vendor_id = ${orders.vendorId}
+      )`,
+
       warehouseId: vendors.warehouseId,
       warehouseName: warehouses.name,
       itemName: products.name,
       itemQuantity: orderItems.quantity,
-      itemPrice: sql<string>`(${orderItems.totalPrice} / ${orderItems.quantity})`,
+      itemPrice: sql<string>`(${orderItems.totalPrice} / NULLIF(${orderItems.quantity}, 0))`,
 
-      destinationName: vendors.address,
+      destinationName: vendors.name,
       address: vendors.address,
+      customerName: vendors.name,
+      customerAddress: vendors.address,
 
       serviceTimeMins: orderItems.serviceTime,
 
@@ -80,42 +86,54 @@ export default async function exportRouteOptimisationOrders(
       contact: vendors.phoneNumber,
     })
     .from(orders)
-    .innerJoin(vendors, eq(orders.vendorId, vendors.id))
+    .leftJoin(vendors, eq(orders.vendorId, vendors.id))
     .leftJoin(warehouses, eq(vendors.warehouseId, warehouses.id))
-    .innerJoin(orderItems, eq(orderItems.orderId, orders.id))
-    .innerJoin(products, eq(orderItems.productId, products.id))
+    .leftJoin(orderItems, eq(orderItems.orderId, orders.id))
+    .leftJoin(products, eq(orderItems.productId, products.id))
     .where(and(gte(orders.deliveryDate, fromDate), lte(orders.deliveryDate, toDate)));
 
-  for (const r of rows) {
-    res.write(
-      [
-        csvEscape(r.id),
-        csvEscape(r.orderId),
-        csvEscape(r.warehouseId),
-        csvEscape(r.warehouseName),
-        "",
-        csvEscape(r.itemName),
-        csvEscape(r.itemQuantity),
-        csvEscape(r.itemPrice),
-        csvEscape(r.destinationName),
-        csvEscape(r.address),
-        csvEscape(r.serviceTimeMins),
-        "",
-        csvEscape(r.lat),
-        csvEscape(r.lon),
-        csvEscape(convertTo24Hour(r.openingHour)),
-        csvEscape(convertTo24Hour(r.closingHour)),
-        csvEscape(r.date),
-        "delivery",
-        csvEscape(r.contact),
-        "",
-        "",
-        "",
-        "",
-        "",
-      ].join(",") + "\n"
-    );
-  }
+  // Headers are already set by the ExportController
 
-  res.end();
+  try {
+    res.write(
+      "id,order_id,salesperson_id,salesperson_name,warehouse_id,warehouse_name,wbn,item_name,quantity,price,destination_name,address,customer_name,customer_address,service_time_mins,package_weight_kg,lat,lon,opening_hour,closing_hour,date,type,contact,secondary_contact,dimension_unit,dimension_length,dimension_width,dimension_height\n"
+    );
+
+    for (const r of rows) {
+      res.write(
+        [
+          csvEscape(r.id),
+          csvEscape(r.orderId),
+          csvEscape(r.salespersonId),
+          csvEscape(r.salespersonName),
+          csvEscape(r.warehouseId),
+          csvEscape(r.warehouseName),
+          "",
+          csvEscape(r.itemName),
+          csvEscape(r.itemQuantity),
+          csvEscape(r.itemPrice),
+          csvEscape(r.destinationName),
+          csvEscape(r.address),
+          csvEscape(r.customerName),
+          csvEscape(r.customerAddress),
+          csvEscape(r.serviceTimeMins),
+          "",
+          csvEscape(r.lat),
+          csvEscape(r.lon),
+          csvEscape(convertTo24Hour(r.openingHour)),
+          csvEscape(convertTo24Hour(r.closingHour)),
+          csvEscape(r.date),
+          "delivery",
+          csvEscape(r.contact),
+          "",
+          "",
+          "",
+          "",
+          "",
+        ].join(",") + "\n"
+      );
+    }
+  } finally {
+    res.end();
+  }
 }

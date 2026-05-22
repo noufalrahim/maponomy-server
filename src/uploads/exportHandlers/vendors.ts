@@ -15,13 +15,6 @@ function csvEscape(value: unknown): string {
 }
 
 export default async function exportVendors(res: Response) {
-  res.setHeader("Content-Type", "text/csv");
-  res.setHeader("Content-Disposition", "attachment; filename=vendors.csv");
-
-  res.write(
-    "name,address,phone_number,warehouse_id,warehouse_name,active,created_at,salespersons\n"
-  );
-
   const rows = await db
     .select({
       name: vendors.name,
@@ -32,7 +25,13 @@ export default async function exportVendors(res: Response) {
       active: vendors.active,
       createdAt: vendors.createdAt,
 
-      // 🔑 COMMA-SEPARATED SALESPERSONS (NO TRAILING COMMA)
+      // 🔑 COMMA-SEPARATED SALESPERSON IDs and NAMES
+      salespersonIds: sql<string>`
+        COALESCE(
+          string_agg(${salespersons.id}::text, ', ' ORDER BY ${salespersons.name}),
+          ''
+        )
+      `.as("salesperson_ids"),
       salespersons: sql<string>`
         COALESCE(
           string_agg(${salespersons.name}, ', ' ORDER BY ${salespersons.name}),
@@ -55,20 +54,29 @@ export default async function exportVendors(res: Response) {
       vendors.createdAt
     );
 
-  for (const r of rows) {
-    res.write(
-      [
-        csvEscape(r.name),
-        csvEscape(r.address),
-        csvEscape(r.phoneNumber),
-        csvEscape(r.warehouseId),
-        csvEscape(r.warehouseName),
-        csvEscape(r.active),
-        csvEscape(r.createdAt.toISOString()),
-        csvEscape(r.salespersons),
-      ].join(",") + "\n"
-    );
-  }
+  // Headers are already set by the ExportController
 
-  res.end();
+  try {
+    res.write(
+      "name,address,phone_number,warehouse_id,warehouse_name,active,created_at,salesperson_id,salespersons\n"
+    );
+
+    for (const r of rows) {
+      res.write(
+        [
+          csvEscape(r.name),
+          csvEscape(r.address),
+          csvEscape(r.phoneNumber),
+          csvEscape(r.warehouseId),
+          csvEscape(r.warehouseName),
+          csvEscape(r.active),
+          csvEscape(r.createdAt instanceof Date ? r.createdAt.toISOString() : r.createdAt),
+          csvEscape(r.salespersonIds),
+          csvEscape(r.salespersons),
+        ].join(",") + "\n"
+      );
+    }
+  } finally {
+    res.end();
+  }
 }

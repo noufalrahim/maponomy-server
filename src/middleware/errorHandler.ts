@@ -7,8 +7,15 @@ export const errorHandler = (
   err: Error,
   _req: Request,
   res: Response,
-  _next: NextFunction
+  next: NextFunction
 ): void => {
+  if (res.headersSent) {
+    console.error("Error occurred after headers were sent:", err);
+    if (!res.writableEnded) {
+      res.end();
+    }
+    return;
+  }
 
   if (err instanceof AppError) {
     sendError(res, {
